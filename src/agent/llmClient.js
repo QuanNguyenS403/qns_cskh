@@ -82,7 +82,8 @@ export class LLMClient {
       try {
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 30000)
+        const timeoutMs = modelName === this.model && modelsToAttempt.length > 1 ? 12000 : 20000
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
         if (timeoutId && typeof timeoutId.unref === 'function') {
           timeoutId.unref()
         }

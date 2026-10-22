@@ -1,0 +1,23 @@
+[Unit]
+Description=QuanNguyenS 24/7 AI Customer Care & Action Gateway
+Documentation=https://github.com/QuanNguyenS403/qns_cskh
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/cskh
+ExecStart=/usr/bin/node src/server.js
+Restart=always
+RestartSec=5s
+Environment=NODE_ENV=production
+Environment=PORT=3002
+StandardOutput=append:/var/log/cskh-out.log
+StandardError=append:/var/log/cskh-error.log
+
+# Giới hạn tài nguyên an toàn
+LimitNOFILE=65536
+MemoryMax=600M
+
+[Install]
+WantedBy=multi-user.target
