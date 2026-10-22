@@ -84,9 +84,12 @@ export class MessengerAdapter {
     }
 
     try {
-      const response = await fetchImpl(`${this.graphApiUrl}?access_token=${this.token}`, {
+      const response = await fetchImpl(this.graphApiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.token}`,
+        },
         body: JSON.stringify(body),
       })
 

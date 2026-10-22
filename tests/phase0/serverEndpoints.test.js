@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import app from '../../src/server.js'
+import { config } from '../../src/config/env.js'
 
 test('Phase 0 - Server Endpoints & Health Gateway', async (t) => {
   const server = app.listen(0)
@@ -28,17 +29,36 @@ test('Phase 0 - Server Endpoints & Health Gateway', async (t) => {
     assert.ok(healthData.killSwitch)
 
     // 4. Test Meta Webhook Verify GET
-    const metaVerifyRes = await fetch(`${baseUrl}/api/webhook/meta?hub.mode=subscribe&hub.verify_token=quannguyens_meta_verify_token_2026&hub.challenge=test_challenge_abc`)
+    const verifyToken = config.META_VERIFY_TOKEN || 'test_meta_verify_token'
+    const metaVerifyRes = await fetch(`${baseUrl}/api/webhook/meta?hub.mode=subscribe&hub.verify_token=${verifyToken}&hub.challenge=test_challenge_abc`)
     const metaVerifyText = await metaVerifyRes.text()
     assert.strictEqual(metaVerifyRes.status, 200)
     assert.strictEqual(metaVerifyText, 'test_challenge_abc')
 
-    // 5. Test Kill Switch Admin API
-    const killSwitchRes = await fetch(`${baseUrl}/api/admin/killswitch`, {
+    // 5. Test Kill Switch Admin API - Không có auth -> Phải bị 401 Unauthorized
+    const unauthGetRes = await fetch(`${baseUrl}/api/admin/killswitch`)
+    assert.strictEqual(unauthGetRes.status, 401, 'GET /api/admin/killswitch không auth phải trả về 401 (C2)')
+
+    const unauthPostRes = await fetch(`${baseUrl}/api/admin/killswitch`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ level: 'action', target: 'refund', state: false }),
+    })
+    assert.strictEqual(unauthPostRes.status, 401, 'POST /api/admin/killswitch không auth phải trả về 401 (C2)')
+
+    // 6. Test Kill Switch Admin API - Có Bearer Auth đúng -> 200 OK
+    const authHeaders = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${config.ADMIN_SECRET}`,
+    }
+
+    const authGetRes = await fetch(`${baseUrl}/api/admin/killswitch`, { headers: authHeaders })
+    assert.strictEqual(authGetRes.status, 200)
+
+    const killSwitchRes = await fetch(`${baseUrl}/api/admin/killswitch`, {
+      method: 'POST',
+      headers: authHeaders,
       body: JSON.stringify({
-        secret: 'cskh_dev_admin_secret_key_0123456789abcdef',
         level: 'action',
         target: 'refund',
         state: false,
@@ -52,9 +72,8 @@ test('Phase 0 - Server Endpoints & Health Gateway', async (t) => {
     // Reset lại
     await fetch(`${baseUrl}/api/admin/killswitch`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders,
       body: JSON.stringify({
-        secret: 'cskh_dev_admin_secret_key_0123456789abcdef',
         level: 'action',
         target: 'refund',
         state: true,

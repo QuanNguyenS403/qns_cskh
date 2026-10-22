@@ -343,9 +343,9 @@ export class OrderService {
     }
 
     // Lấy thông tin tài khoản ngân hàng Vietcombank từ Secret Config (B09)
-    const bankId = process.env.VIETQR_BANK_ID || 'VCB'
-    const accountNo = process.env.VIETQR_ACCOUNT_NO || '1050773506'
-    const accountName = process.env.VIETQR_ACCOUNT_NAME || 'NGUYEN DUC QUAN'
+    const bankId = config.VIETQR_BANK_ID || process.env.VIETQR_BANK_ID || 'VCB'
+    const accountNo = config.VIETQR_ACCOUNT_NO || process.env.VIETQR_ACCOUNT_NO || '1050773506'
+    const accountName = config.VIETQR_ACCOUNT_NAME || process.env.VIETQR_ACCOUNT_NAME || 'NGUYEN DUC QUAN'
     const cleanCode = row.order_id.replace(/[^A-Z0-9]/g, '').slice(-8)
     const transferContent = `QNS ${cleanCode}`
     const amount = row.total
@@ -375,6 +375,7 @@ export class OrderService {
     gateway = 'sepay',
     transactionId,
     amount,
+    targetAccount = null,
     rawPayload = {},
   }) {
     if (!transactionId || amount === undefined) {
@@ -394,9 +395,11 @@ export class OrderService {
         INSERT INTO payments (
           id, tenant_id, shop_id, order_id, gateway, transaction_id,
           amount, currency, status, paid_at, raw_payload, created_at, updated_at
-        ) VALUES (?, 'default', 'quannguyens', ?, ?, ?, ?, 'VND', 'PENDING', ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'VND', 'PENDING', ?, ?, ?, ?)
       `).run(
         `PAY-${Date.now()}-${transactionId}`,
+        config.DEFAULT_TENANT_ID,
+        config.DEFAULT_SHOP_ID,
         orderId || 'UNKNOWN',
         gateway,
         String(transactionId),

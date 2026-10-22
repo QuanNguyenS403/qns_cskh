@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
+import crypto from 'node:crypto'
 import { config } from './config/env.js'
 import { getDb } from './db/connection.js'
 import { runMigrations } from './db/migrations.js'
@@ -14,10 +15,38 @@ import { GoogleSheetsService } from './integrations/googleSheetsService.js'
 import { eventGateway } from './events/eventGateway.js'
 import { createRateLimiter } from './security/rateLimiter.js'
 
+export function timingSafeCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false
+  const bufA = Buffer.from(a)
+  const bufB = Buffer.from(b)
+  if (bufA.length !== bufB.length) return false
+  return crypto.timingSafeEqual(bufA, bufB)
+}
+
+export function extractBearerToken(req) {
+  const authHeader = req.headers['authorization'] || ''
+  if (authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim()
+  }
+  if (authHeader.startsWith('ApiKey ') || authHeader.startsWith('Apikey ')) {
+    return authHeader.slice(7).trim()
+  }
+  return authHeader.trim()
+}
+
 const app = express()
 
 app.use(helmet())
-app.use(cors())
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || config.NODE_ENV !== 'production' || config.CORS_ORIGIN.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Blocked by CORS policy'))
+    }
+  },
+  credentials: true,
+}))
 app.use(express.json({
   verify: (req, res, buf) => {
     req.rawBody = buf.toString()
@@ -231,9 +260,33 @@ app.get('/api/webhook/zalo', (req, res) => {
 
 app.post('/api/webhook/zalo', webhookLimiter, async (req, res) => {
   try {
+    // Xác thực chữ ký Zalo (C4)
+    if (config.ZALO_SECRET_KEY) {
+      const signature = req.headers['x-zevent-signature'] || req.headers['mac'] || ''
+      const rawBody = req.rawBody || JSON.stringify(req.body)
+      const isValid = eventGateway.verifySignature(rawBody, signature, config.ZALO_SECRET_KEY)
+      if (!isValid) {
+        return res.status(401).json({ success: false, error: 'Unauthorized Zalo Webhook signature' })
+      }
+    }
+
     const inbound = zaloAdapter.parseInboundEvent(req.body)
     if (!inbound) {
       return res.json({ success: true, ignored: true })
+    }
+
+    // Chống trùng lặp sự kiện Zalo (H13)
+    const ingestRes = eventGateway.ingestEvent({
+      eventId: inbound.messageId,
+      source: 'zalo',
+      eventType: 'message.received',
+      entityType: 'customer',
+      entityId: inbound.channelSenderId,
+      payload: inbound,
+    })
+
+    if (ingestRes.isDuplicate) {
+      return res.json({ success: true, message: 'Duplicate Zalo event ignored' })
     }
 
     console.log(`📩 [INBOUND ZALO OA] Từ ${inbound.channelSenderId}: "${inbound.text}"`)
@@ -255,21 +308,39 @@ app.post('/api/webhook/zalo', webhookLimiter, async (req, res) => {
     return res.json({ success: true, status: 'PROCESSED' })
   } catch (err) {
     console.error(`❌ [ZALO WEBHOOK ERROR]:`, err.message)
-    return res.status(500).json({ success: false, error: err.message })
+    return res.status(500).json({ success: false, error: 'Lỗi xử lý Zalo webhook' })
   }
 })
 
-// ── SEPAY / BANK PAYMENT WEBHOOK ─────────────────────────────
+// ── SEPAY / BANK PAYMENT WEBHOOK (C1, B08, T13) ──────────────
 app.post('/api/webhook/sepay', webhookLimiter, async (req, res) => {
   try {
-    const rawAuth = req.headers['authorization'] || req.headers['x-api-key'] || ''
-    const expectedSecret = process.env.SEPAY_WEBHOOK_API_KEY
-    if (expectedSecret && !rawAuth.includes(expectedSecret)) {
+    const rawAuth = extractBearerToken(req) || req.headers['x-api-key'] || ''
+    const expectedSecret = config.SEPAY_WEBHOOK_API_KEY
+
+    // Bắt buộc xác thực hằng-thời-gian, không bao giờ bypass khi thiếu key (C1)
+    if (!expectedSecret || !timingSafeCompare(rawAuth, expectedSecret)) {
       return res.status(401).json({ success: false, error: 'Unauthorized payment webhook' })
     }
 
     const payload = req.body || {}
-    const txId = String(payload.id || payload.referenceCode || Date.now())
+    const rawTxId = payload.id || payload.referenceCode
+    if (!rawTxId) {
+      return res.status(400).json({ success: false, error: 'Thiếu mã giao dịch thanh toán bắt buộc (id/referenceCode)' })
+    }
+    const txId = String(rawTxId)
+
+    // Kiểm tra chiều dòng tiền: từ chối giao dịch chuyển tiền đi (outbound)
+    const isOutbound = payload.transferType === 'out' || (payload.amountOut && Number(payload.amountOut) > 0 && !payload.amountIn)
+    if (isOutbound) {
+      return res.status(400).json({ success: false, error: 'Giao dịch chuyển tiền đi không thể đối soát thanh toán đơn hàng' })
+    }
+
+    // Kiểm tra tài khoản nhận nếu có
+    const targetAccount = String(payload.accountNumber || payload.subAccount || '').trim()
+    if (targetAccount && config.VIETQR_ACCOUNT_NO && targetAccount !== String(config.VIETQR_ACCOUNT_NO).trim()) {
+      return res.status(400).json({ success: false, error: 'Tài khoản nhận giao dịch không khớp với cấu hình của shop' })
+    }
 
     const ingestRes = eventGateway.ingestEvent({
       eventId: txId,
@@ -298,21 +369,29 @@ app.post('/api/webhook/sepay', webhookLimiter, async (req, res) => {
       gateway: 'sepay',
       transactionId: txId,
       amount: payload.amountIn || payload.transferAmount || payload.amount || 0,
+      targetAccount,
       rawPayload: payload,
     })
 
     return res.json({ success: true, message: 'Đã tiếp nhận và đối soát giao dịch', eventId: txId, reconcile: reconcileRes })
   } catch (err) {
     console.error('SePay webhook error:', err)
-    return res.status(500).json({ success: false, error: err.message })
+    return res.status(500).json({ success: false, error: 'Lỗi xử lý webhook thanh toán' })
   }
 })
 
-// ── GOOGLE SHEETS LIVE ORDER CONFIRMATION WEBHOOK ────────────
+// ── GOOGLE SHEETS LIVE ORDER CONFIRMATION WEBHOOK (C3) ───────
 app.post('/api/webhook/google-sheets', webhookLimiter, async (req, res) => {
   try {
+    const rawSecret = extractBearerToken(req) || req.headers['x-sheets-secret'] || req.body?.secret || ''
+    const expectedSecret = config.GOOGLE_SHEET_WEBHOOK_SECRET
+
+    // Bắt buộc xác thực bí mật hằng-thời-gian (C3)
+    if (!expectedSecret || !timingSafeCompare(rawSecret, expectedSecret)) {
+      return res.status(401).json({ success: false, error: 'Unauthorized: Sai hoặc thiếu Google Sheet Webhook Secret' })
+    }
+
     const {
-      secret,
       orderId,
       customerName,
       customerPhone,
@@ -323,11 +402,6 @@ app.post('/api/webhook/google-sheets', webhookLimiter, async (req, res) => {
       trackingCode,
       confirmedBy = 'Chủ shop (Google Sheet)',
     } = req.body || {}
-
-    // Xác thực secret nếu đã cấu hình
-    if (config.GOOGLE_SHEET_WEBHOOK_SECRET && secret && secret !== config.GOOGLE_SHEET_WEBHOOK_SECRET) {
-      return res.status(401).json({ success: false, error: 'Unauthorized: Sai Google Sheet Webhook Secret' })
-    }
 
     if (!orderId) {
       return res.status(400).json({ success: false, error: 'Thiếu mã đơn hàng (orderId)' })
@@ -346,24 +420,37 @@ app.post('/api/webhook/google-sheets', webhookLimiter, async (req, res) => {
       confirmedBy,
     })
 
+    if (result.status === 'REJECTED' && result.error_code === 'ORDER_NOT_FOUND') {
+      return res.status(404).json({ success: false, ...result })
+    }
+
     return res.json({ success: true, ...result })
   } catch (err) {
     console.error('❌ [GOOGLE SHEETS WEBHOOK ERROR]:', err.message)
-    return res.status(500).json({ success: false, error: err.message })
+    return res.status(500).json({ success: false, error: 'Lỗi xử lý webhook Google Sheets' })
   }
 })
 
-// ── ADMIN KILL SWITCH CONTROL ────────────────────────────────
+// ── ADMIN KILL SWITCH CONTROL (C2: Auth Header + Durable SQLite) ──
+function verifyAdmin(req) {
+  const token = extractBearerToken(req) || req.headers['x-admin-secret'] || (req.body && req.body.secret) || ''
+  if (!config.ADMIN_SECRET || !token) return false
+  return timingSafeCompare(token, config.ADMIN_SECRET)
+}
+
 app.get('/api/admin/killswitch', (req, res) => {
+  if (!verifyAdmin(req)) {
+    return res.status(401).json({ success: false, error: 'Unauthorized: Admin Secret required' })
+  }
   return res.json(killSwitch.getStatus())
 })
 
 app.post('/api/admin/killswitch', (req, res) => {
-  const { secret, level, target, state, reason } = req.body || {}
-  if (secret !== config.ADMIN_SECRET) {
+  if (!verifyAdmin(req)) {
     return res.status(401).json({ success: false, error: 'Unauthorized: Invalid Admin Secret' })
   }
 
+  const { level, target, state, reason } = req.body || {}
   if (level === 'global') {
     killSwitch.setGlobalKill(state, reason)
   } else if (level === 'action') {
@@ -377,15 +464,21 @@ app.post('/api/admin/killswitch', (req, res) => {
   return res.json({ success: true, status: killSwitch.getStatus() })
 })
 
-// Khởi tạo Database Migration và Dữ liệu Chính sách mặc định khi khởi chạy
+// Khởi tạo Database Migration và Dữ liệu Chính sách mặc định khi khởi chạy (H9: Fail-closed)
 try {
   const db = getDb()
   runMigrations(db)
-  seedDefaultPolicies(db, 'quannguyens', true)
-  GoogleSheetsService.startPoller(db)
+  killSwitch.init(db)
+  seedDefaultPolicies(db, config.DEFAULT_SHOP_ID, true)
+  if (config.GOOGLE_SHEET_AUTO_SYNC && config.NODE_ENV !== 'test') {
+    GoogleSheetsService.startPoller(db)
+  }
   console.log('✅ [CSKH DB] Cơ sở dữ liệu, Migration & Chính sách đã sẵn sàng.')
 } catch (e) {
-  console.error('❌ [CSKH DB ERROR]:', e.message)
+  console.error('🚨 [FATAL STARTUP ERROR] Khởi tạo DB/Migration thất bại:', e.message)
+  if (!process.env.SUPPRESS_STARTUP_EXIT) {
+    process.exit(1)
+  }
 }
 
 import { fileURLToPath } from 'url'

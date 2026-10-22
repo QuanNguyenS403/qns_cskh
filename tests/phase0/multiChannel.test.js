@@ -140,11 +140,21 @@ test('Phase 0 & Multi-Channel - can_send Runtime & Channel Gate Checks', async (
   assert.strictEqual(verifyStatus, 200)
   assert.strictEqual(verifyBody, 'CHALLENGE_ACCEPTED_777')
 
-  // 8. Test Mock Send qua các Adapter
+  // 8. Test Send qua các Adapter với mock fetch để không gọi API bên thứ ba lúc unit test
+  const mockFetchMeta = async () => ({
+    ok: true,
+    json: async () => ({ recipient_id: 'user_123', message_id: 'mid.test.123', id: 'test_container_id' }),
+  })
+  const mockFetchZalo = async () => ({
+    ok: true,
+    json: async () => ({ error: 0, message: 'Success', data: { msg_id: 'zalo_test_msg_123' } }),
+  })
+
   const msgRes = await messengerAdapter.sendMessage({
     recipientId: 'user_123',
     text: 'Chào bạn, May có thể hỗ trợ gì cho bạn?',
     lastCustomerInteractionAt: interaction2hAgo,
+    fetchImpl: mockFetchMeta,
   })
   assert.strictEqual(msgRes.sent, true)
 
@@ -152,12 +162,14 @@ test('Phase 0 & Multi-Channel - can_send Runtime & Channel Gate Checks', async (
     recipientId: 'ig_user_456',
     text: 'Dạ mẫu The Daybreak Set có sẵn size M ạ',
     lastCustomerInteractionAt: interaction2hAgo,
+    fetchImpl: mockFetchMeta,
   })
   assert.strictEqual(igRes.sent, true)
 
   const thRes = await threadsAdapter.replyToThread({
     replyToThreadId: 'thread_post_789',
-    text: 'QuanNguyenS may bằng sợi tự nhiên 165 GSM bạn nhé!',
+    text: 'QuanNguyenS may bằng sợi tự nhiên bạn nhé!',
+    fetchImpl: mockFetchMeta,
   })
   assert.strictEqual(thRes.sent, true)
 
@@ -165,6 +177,7 @@ test('Phase 0 & Multi-Channel - can_send Runtime & Channel Gate Checks', async (
     recipientId: 'zalo_user_999',
     templateId: 'tpl_order_confirmed_01',
     templateData: { orderId: 'QNS-123' },
+    fetchImpl: mockFetchZalo,
   })
   assert.strictEqual(zaloRes.sent, true)
 

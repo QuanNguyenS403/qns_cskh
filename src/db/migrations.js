@@ -396,6 +396,27 @@ export const MIGRATIONS = [
       `)
     },
   },
+  {
+    version: 3,
+    name: '003_durable_kill_switch_and_security',
+    up(db) {
+      db.exec(`
+        -- Bảng kill_switch_state: Lưu trữ trạng thái công tắc khẩn cấp bền vững (C2)
+        CREATE TABLE IF NOT EXISTS kill_switch_state (
+          scope TEXT PRIMARY KEY,
+          target TEXT NOT NULL,
+          state INTEGER NOT NULL DEFAULT 1,
+          reason TEXT,
+          updated_at TEXT NOT NULL
+        );
+      `)
+    },
+    down(db) {
+      db.exec(`
+        DROP TABLE IF EXISTS kill_switch_state;
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db) {

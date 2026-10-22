@@ -10,7 +10,7 @@ import { config } from '../config/env.js'
 export class LLMClient {
   constructor() {
     this.apiKey = config.GEMINI_API_KEY
-    this.model = config.GEMINI_MODEL || 'gemini-3.8-flash'
+    this.model = config.GEMINI_MODEL || 'gemini-3.5-flash'
     this.provider = config.LLM_PROVIDER || 'gemini'
   }
 
@@ -35,7 +35,7 @@ export class LLMClient {
     }
 
     try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent`
 
       // Xây dựng contents array
       const contents = []
@@ -68,13 +68,22 @@ export class LLMClient {
         },
       }
 
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000)
+      if (timeoutId && typeof timeoutId.unref === 'function') {
+        timeoutId.unref()
+      }
+
       const response = await fetchImpl(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-goog-api-key': this.apiKey,
         },
         body: JSON.stringify(requestBody),
+        signal: controller.signal,
       })
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
         const errorText = await response.text()

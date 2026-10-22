@@ -22,7 +22,7 @@ test('Phase 0 - Database Migrations: Reversible Up and Down', (t) => {
     'orders', 'payments', 'shipments', 'cases', 'promises',
     'consents', 'preferences', 'memory_facts', 'events', 'outbox',
     'jobs', 'action_audits', 'policy_versions', 'quotes', 'reservations',
-    'conversations', 'messages', 'policy_snapshots', '_migrations'
+    'conversations', 'messages', 'policy_snapshots', 'kill_switch_state', '_migrations'
   ]
 
   const existingTables = db.prepare(`

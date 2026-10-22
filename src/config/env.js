@@ -4,6 +4,55 @@ import fs from 'fs'
 
 dotenv.config()
 
+export const INSECURE_DEFAULT_SECRETS = [
+  'dev_secret_confirmation_key_32bytes_min',
+  'dev_admin_secret_key_32bytes_min',
+  'dev_webhook_secret_key_32bytes_min',
+  'quannguyens_meta_verify_token_2026',
+  'quannguyens_sheets_secret_2026',
+  'cskh_dev_admin_secret_key_0123456789abcdef',
+]
+
+/**
+ * Kiểm tra tính hợp lệ của biến môi trường (Fail-Closed R-01)
+ */
+export function validateEnvironment(env = process.env) {
+  const currentEnv = env.NODE_ENV || 'production'
+  const isProd = currentEnv === 'production'
+
+  const confirmationSecret = env.CSKH_CONFIRMATION_SECRET || ''
+  const adminSecret = env.CSKH_ADMIN_SECRET || ''
+  const webhookSecret = env.CSKH_WEBHOOK_SECRET || ''
+
+  const errors = []
+
+  if (isProd) {
+    if (!confirmationSecret || confirmationSecret.length < 32 || INSECURE_DEFAULT_SECRETS.includes(confirmationSecret)) {
+      errors.push('CSKH_CONFIRMATION_SECRET bắt buộc, không được dùng giá trị mặc định/placeholder và phải >= 32 ký tự')
+    }
+    if (!adminSecret || adminSecret.length < 32 || INSECURE_DEFAULT_SECRETS.includes(adminSecret)) {
+      errors.push('CSKH_ADMIN_SECRET bắt buộc, không được dùng giá trị mặc định/placeholder và phải >= 32 ký tự')
+    }
+    if (!webhookSecret || webhookSecret.length < 32 || INSECURE_DEFAULT_SECRETS.includes(webhookSecret)) {
+      errors.push('CSKH_WEBHOOK_SECRET bắt buộc, không được dùng giá trị mặc định/placeholder và phải >= 32 ký tự')
+    }
+    if (env.META_PAGE_ID && (!env.META_APP_SECRET || env.META_APP_SECRET.length < 16)) {
+      errors.push('META_APP_SECRET bắt buộc ở production khi cấu hình Meta Integration')
+    }
+  }
+
+  return { isValid: errors.length === 0, errors }
+}
+
+const envCheck = validateEnvironment()
+if (!envCheck.isValid && (process.env.NODE_ENV || 'production') === 'production') {
+  console.error('🚨 [FATAL CONFIG ERROR] Hệ thống từ chối khởi động ở Production do lỗi bảo mật (R-01):')
+  envCheck.errors.forEach((err) => console.error(`   - ${err}`))
+  if (process.env.NODE_ENV === 'production' && !process.env.SUPPRESS_CONFIG_EXIT) {
+    process.exit(1)
+  }
+}
+
 export const config = {
   NODE_ENV: process.env.NODE_ENV || 'production',
   PORT: parseInt(process.env.PORT || '3002', 10),
@@ -15,26 +64,33 @@ export const config = {
 
   DB_PATH: process.env.CSKH_DB_PATH || path.resolve(process.cwd(), 'data/cskh.db'),
 
-  CONFIRMATION_SECRET: process.env.CSKH_CONFIRMATION_SECRET || 'dev_secret_confirmation_key_32bytes_min',
-  ADMIN_SECRET: process.env.CSKH_ADMIN_SECRET || 'dev_admin_secret_key_32bytes_min',
-  WEBHOOK_SECRET: process.env.CSKH_WEBHOOK_SECRET || 'dev_webhook_secret_key_32bytes_min',
+  // Secrets: Tuyệt đối không fallback về chuỗi mặc định không an toàn ở production
+  CONFIRMATION_SECRET: process.env.CSKH_CONFIRMATION_SECRET || '',
+  ADMIN_SECRET: process.env.CSKH_ADMIN_SECRET || '',
+  WEBHOOK_SECRET: process.env.CSKH_WEBHOOK_SECRET || '',
+
+  // CORS Origin Allowlist
+  CORS_ORIGIN: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'https://quannguyens.com'],
 
   SHOP_API_BASE_URL: process.env.SHOP_API_BASE_URL || 'http://localhost:3001',
   SHOP_API_TOKEN: process.env.SHOP_API_TOKEN || '',
 
-  // Trí tuệ nhân tạo Google Gemini (Gói Free Tier không thời hạn)
+  // Trí tuệ nhân tạo Google Gemini
   LLM_PROVIDER: process.env.LLM_PROVIDER || 'gemini',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
-  GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
+  GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
   GROQ_API_KEY: process.env.GROQ_API_KEY || '',
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
 
   // Meta (Facebook Page & Messenger)
   META_APP_ID: process.env.META_APP_ID || '',
   META_APP_SECRET: process.env.META_APP_SECRET || '',
-  META_VERIFY_TOKEN: process.env.META_VERIFY_TOKEN || 'quannguyens_meta_verify_token_2026',
+  META_VERIFY_TOKEN: process.env.META_VERIFY_TOKEN || '',
   META_PAGE_ID: process.env.META_PAGE_ID || '',
   META_PAGE_ACCESS_TOKEN: process.env.META_PAGE_ACCESS_TOKEN || '',
+  META_GRAPH_VERSION: process.env.META_GRAPH_VERSION || 'v21.0',
 
   // Instagram Direct Messages
   INSTAGRAM_ACCOUNT_ID: process.env.INSTAGRAM_ACCOUNT_ID || '',
@@ -57,22 +113,22 @@ export const config = {
   BRAND_INSTAGRAM: process.env.BRAND_INSTAGRAM || 'https://instagram.com/qns.style',
   BRAND_TIKTOK: process.env.BRAND_TIKTOK || 'https://www.tiktok.com/@qns.style?lang=vi-VN',
 
-  // Tài khoản thanh toán Vietcombank & VietQR QuickLink (100% Free trọn đời)
+  // Tài khoản thanh toán Vietcombank & VietQR QuickLink (Nguồn cấu hình duy nhất do server quản lý)
   SEPAY_WEBHOOK_API_KEY: process.env.SEPAY_WEBHOOK_API_KEY || '',
   VIETQR_BANK_ID: process.env.VIETQR_BANK_ID || 'VCB',
   VIETQR_BIN: process.env.VIETQR_BIN || '970436',
-  VIETQR_ACCOUNT_NO: process.env.VIETQR_ACCOUNT_NO || '1050773506',
-  VIETQR_ACCOUNT_NAME: process.env.VIETQR_ACCOUNT_NAME || 'NGUYEN DUC QUAN',
+  VIETQR_ACCOUNT_NO: process.env.VIETQR_ACCOUNT_NO || '',
+  VIETQR_ACCOUNT_NAME: process.env.VIETQR_ACCOUNT_NAME || '',
 
-  // Google Sheets Đồng bộ theo dõi đơn hàng (100% Free trọn đời)
+  // Google Sheets Đồng bộ theo dõi đơn hàng
   GOOGLE_SHEET_ID: process.env.GOOGLE_SHEET_ID || '',
   GOOGLE_SHEET_CSV_URL: process.env.GOOGLE_SHEET_CSV_URL || '',
   GOOGLE_SHEET_RANGE: process.env.GOOGLE_SHEET_RANGE || 'A1:Z500',
-  GOOGLE_SHEET_WEBHOOK_SECRET: process.env.GOOGLE_SHEET_WEBHOOK_SECRET || 'quannguyens_sheets_secret_2026',
+  GOOGLE_SHEET_WEBHOOK_SECRET: process.env.GOOGLE_SHEET_WEBHOOK_SECRET || '',
   GOOGLE_SHEET_POLL_INTERVAL_MS: parseInt(process.env.GOOGLE_SHEET_POLL_INTERVAL_MS || '30000', 10),
   GOOGLE_SHEET_AUTO_SYNC: process.env.GOOGLE_SHEET_AUTO_SYNC === 'true',
 
-  // Google Service Account (Xác thực trực tiếp không cần chia sẻ công khai)
+  // Google Service Account
   GOOGLE_SERVICE_ACCOUNT_KEY_PATH: process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH || '',
   GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL: process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL || '',
   GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '',
@@ -85,3 +141,4 @@ export const config = {
   MARKETING_MAX_7D: parseInt(process.env.MARKETING_MAX_7D || '1', 10),
   MARKETING_MAX_30D: parseInt(process.env.MARKETING_MAX_30D || '3', 10),
 }
+

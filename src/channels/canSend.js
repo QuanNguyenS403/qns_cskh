@@ -140,7 +140,7 @@ export class CanSendGate {
     if (customerId && messageType === 'marketing') {
       const consent = this.db.prepare(`
         SELECT status FROM consents
-        WHERE customer_id = ? AND purpose = 'marketing' AND channel = ?
+        WHERE customer_id = ? AND purpose = 'marketing' AND (channel = ? OR channel = 'all')
         ORDER BY recorded_at DESC LIMIT 1
       `).get(customerId, ch)
 
@@ -148,7 +148,7 @@ export class CanSendGate {
         return {
           decision: 'DENY',
           reasonCode: 'CUSTOMER_OPTED_OUT',
-          message: 'Khách hàng đã từ chối nhận tin tiếp thị trên kênh này.',
+          message: 'Khách hàng đã từ chối nhận tin tiếp thị trên kênh này hoặc trên toàn bộ các kênh.',
         }
       }
     }
@@ -162,7 +162,7 @@ export class CanSendGate {
       }
     }
 
-    // 8. Kiểm tra Trần tần suất tiếp thị (Proposed: max 1/7d, max 3/30d)
+    // 8. Kiểm tra Trần tần suất tiếp thị (H12: Kiểm tra cả trần 7 ngày và 30 ngày)
     if (customerId && messageType === 'marketing') {
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
       const sentLast7d = this.db.prepare(`
@@ -174,7 +174,21 @@ export class CanSendGate {
         return {
           decision: 'DENY',
           reasonCode: 'FREQUENCY_CAP_EXCEEDED_7D',
-          message: `Vượt quá giới hạn tần suất tiếp thị (Đã gửi ${sentLast7d} tin trong 7 ngày).`,
+          message: `Vượt quá giới hạn tần suất tiếp thị 7 ngày (Đã gửi ${sentLast7d} tin trong 7 ngày).`,
+        }
+      }
+
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      const sentLast30d = this.db.prepare(`
+        SELECT COUNT(*) as count FROM outbox
+        WHERE recipient_id = ? AND message_type = 'marketing' AND status = 'SENT' AND updated_at >= ?
+      `).get(customerId, thirtyDaysAgo).count
+
+      if (sentLast30d >= config.MARKETING_MAX_30D) {
+        return {
+          decision: 'DENY',
+          reasonCode: 'FREQUENCY_CAP_EXCEEDED_30D',
+          message: `Vượt quá giới hạn tần suất tiếp thị 30 ngày (Đã gửi ${sentLast30d} tin trong 30 ngày).`,
         }
       }
     }
