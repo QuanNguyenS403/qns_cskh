@@ -119,6 +119,22 @@ export class MayOrchestrator {
     else if (isRushed) emotionSignal = 'rushed'
     else if (isHesitant) emotionSignal = 'hesitant'
 
+    // ── 1.1. CHÀO HỎI TỰ NHIÊN (Lô, Alo, Hi, Hello, Chào shop, Sốp...) ──
+    const isGreeting = /^(lô|lo|alo|chào|chào shop|chao shop|hi|hello|hey|shop ơi|shop oi|ad ơi|ad oi|sốp|sop)$/i.test(rawText.trim()) ||
+      /^(lô|lo|alo|hi|hello)\\s+(shop|ad|bạn|sốp)/i.test(rawText.trim())
+    if (isGreeting) {
+      customerMessage = 'Dạ QuanNguyenS xin chào bạn! Mình là trợ lý AI của QuanNguyenS. Mình luôn có mặt 24/7 để hỗ trợ bạn xem mẫu pijama, tư vấn size theo chiều cao cân nặng, báo giá ưu đãi và hỗ trợ đơn hàng ạ. Bạn đang cần shop hỗ trợ thông tin gì ạ?'
+      intentCodes.push('greeting')
+      nextStep = 'INFORM'
+      return this._finalizeOutput({
+        customerMessage,
+        intentCodes,
+        nextStep,
+        evidenceRefs: ['brand_identity@v1.0'],
+        emotionSignal,
+      })
+    }
+
     // ── 2. XỬ LÝ CÁC CA KIỂM THỬ ĐẶC THÙ & SECURITY (X01–X15) ─────
 
     // X15: Hỏi là người hay bot

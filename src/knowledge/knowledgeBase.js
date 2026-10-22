@@ -225,7 +225,13 @@ export class KnowledgeBase {
         }
 
         for (const token of expandedTokens) {
-          if (docText.includes(token)) {
+          // Từ ngắn <= 2 ký tự bắt buộc so khớp nguyên từ (whole word) để tránh match sai (ví dụ "lo" trong "look")
+          if (token.length <= 2) {
+            const wordRegex = new RegExp(`\\b${token}\\b`, 'i')
+            if (wordRegex.test(docText)) {
+              score += 1.5
+            }
+          } else if (docText.includes(token)) {
             score += 1.5
           }
           // Khớp tiêu đề điểm cao hơn

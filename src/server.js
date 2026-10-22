@@ -238,22 +238,7 @@ app.post('/api/webhook/meta', webhookLimiter, async (req, res) => {
     try {
       const db = getDb()
 
-      // Chống xử lý trùng lặp sự kiện Meta Webhook (H13, R1)
-      if (inboundMessage.messageId) {
-        const ingestRes = eventGateway.ingestEvent({
-          eventId: inboundMessage.messageId,
-          source: inboundMessage.channel,
-          eventType: 'message.received',
-          entityType: 'customer',
-          entityId: inboundMessage.channelSenderId,
-          payload: inboundMessage,
-        })
-
-        if (ingestRes.isDuplicate) {
-          console.log(`ℹ️ [META WEBHOOK DEDUP] Bỏ qua tin nhắn trùng lặp từ ${inboundMessage.channel} (${inboundMessage.messageId})`)
-          return
-        }
-      }
+      // Sự kiện Meta Webhook đã được khử trùng lặp an toàn tại handleMetaWebhookPost
 
       const orchestrator = new MayOrchestrator(db)
       const agentResponse = await orchestrator.processMessage({
@@ -269,9 +254,10 @@ app.post('/api/webhook/meta', webhookLimiter, async (req, res) => {
 
       // Gửi phản hồi qua adapter tương ứng có can_send bảo vệ
       if (inboundMessage.channel === 'messenger') {
-        await messengerAdapter.sendMessage({ recipientId: inboundMessage.channelSenderId, text: agentResponse.customer_message })
+        const lastCustomerInteractionAt = inboundMessage.occurredAt || new Date().toISOString()
+        await messengerAdapter.sendMessage({ recipientId: inboundMessage.channelSenderId, text: agentResponse.customer_message, lastCustomerInteractionAt })
       } else if (inboundMessage.channel === 'instagram') {
-        await instagramAdapter.sendMessage({ recipientId: inboundMessage.channelSenderId, text: agentResponse.customer_message })
+        await instagramAdapter.sendMessage({ recipientId: inboundMessage.channelSenderId, text: agentResponse.customer_message, lastCustomerInteractionAt })
       } else if (inboundMessage.channel === 'threads') {
         await threadsAdapter.replyToPost({ postId: inboundMessage.channelSenderId, text: agentResponse.customer_message })
       }

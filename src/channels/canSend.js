@@ -97,7 +97,21 @@ export class CanSendGate {
     // 4. Kiểm tra Cửa sổ 24 giờ cho Messenger / Instagram (Standard 24h Window)
     if (ch === 'messenger' || ch === 'instagram') {
       if (messageType === 'marketing' || !metaMessageTag) {
-        if (!lastCustomerInteractionAt) {
+        let interactionTime = lastCustomerInteractionAt
+
+        // Tự động tra cứu mốc tương tác gần nhất trong CSDL nếu chưa truyền trực tiếp
+        if (!interactionTime && this.db && customerId) {
+          try {
+            const conv = this.db.prepare(
+              `SELECT last_interaction_at FROM conversations WHERE (channel_conversation_id = ? OR id = ?) AND channel = ? LIMIT 1`
+            ).get(customerId, customerId, ch)
+            if (conv && conv.last_interaction_at) {
+              interactionTime = conv.last_interaction_at
+            }
+          } catch (_) {}
+        }
+
+        if (!interactionTime) {
           return {
             decision: 'DENY',
             reasonCode: 'OUTSIDE_24H_WINDOW',
@@ -105,7 +119,7 @@ export class CanSendGate {
           }
         }
 
-        const elapsedMs = now.getTime() - new Date(lastCustomerInteractionAt).getTime()
+        const elapsedMs = now.getTime() - new Date(interactionTime).getTime()
         const twentyFourHoursMs = 24 * 60 * 60 * 1000
 
         if (elapsedMs > twentyFourHoursMs) {

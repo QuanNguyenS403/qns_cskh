@@ -83,12 +83,12 @@ Tab **Environment** → thêm từng biến:
 
 ### Bước 4 — Cấu hình GitHub Actions Keep-Alive
 
-Sau khi deploy, lấy URL service Render (VD: `https://quannguyens-ai-cskh.onrender.com`):
+Sau khi deploy, lấy URL service Render (VD: `https://cskh-2m9m.onrender.com`):
 
 1. Trên GitHub repo → **Settings** → **Secrets and variables** → **Actions**
 2. Bấm **New repository secret**
 3. Tên: `RENDER_SERVICE_URL`
-4. Giá trị: `https://quannguyens-ai-cskh.onrender.com` *(không có dấu `/` cuối)*
+4. Giá trị: `https://cskh-2m9m.onrender.com` *(không có dấu `/` cuối)*
 5. Bấm **Add secret**
 
 GitHub Actions sẽ tự động ping mỗi 10 phút → service không bao giờ ngủ.
@@ -97,19 +97,19 @@ GitHub Actions sẽ tự động ping mỗi 10 phút → service không bao gi�
 
 ```bash
 # Health check
-curl https://quannguyens-ai-cskh.onrender.com/livez
+curl https://cskh-2m9m.onrender.com/livez
 # → {"status":"alive","time":"..."}
 
 # Ping endpoint (cho cron job)
-curl https://quannguyens-ai-cskh.onrender.com/api/ping
+curl https://cskh-2m9m.onrender.com/api/ping
 # → {"pong":true,"uptime":123,"time":"..."}
 
 # DB + Readiness
-curl https://quannguyens-ai-cskh.onrender.com/readyz
+curl https://cskh-2m9m.onrender.com/readyz
 # → {"status":"ready","db":"connected","time":"..."}
 
 # Test May chatbot
-curl -X POST https://quannguyens-ai-cskh.onrender.com/api/chat \
+curl -X POST https://cskh-2m9m.onrender.com/api/chat \
   -H "Content-Type: application/json" \
   -d '{"message":"Cho xem giá set pijama Daybreak"}'
 ```
@@ -121,7 +121,7 @@ curl -X POST https://quannguyens-ai-cskh.onrender.com/api/chat \
 ### Phương án A — cron-job.org (Miễn phí, đơn giản nhất)
 
 1. Đăng ký tại [cron-job.org](https://cron-job.org)
-2. **Create Cronjob** → URL: `https://quannguyens-ai-cskh.onrender.com/api/ping`
+2. **Create Cronjob** → URL: `https://cskh-2m9m.onrender.com/api/ping`
 3. Execution schedule: **Every 10 minutes**
 4. Request method: **GET**
 5. Bấm **Create**
@@ -130,7 +130,7 @@ curl -X POST https://quannguyens-ai-cskh.onrender.com/api/chat \
 
 1. Đăng ký tại [uptimerobot.com](https://uptimerobot.com)
 2. **Add New Monitor** → Type: **HTTP(s)**
-3. URL: `https://quannguyens-ai-cskh.onrender.com/livez`
+3. URL: `https://cskh-2m9m.onrender.com/livez`
 4. Monitoring Interval: **5 minutes**
 5. Bấm **Create Monitor**
 
@@ -142,10 +142,10 @@ curl -X POST https://quannguyens-ai-cskh.onrender.com/api/chat \
 
 | Kênh | Webhook URL |
 |------|------------|
-| Meta (Messenger/Instagram/Threads) | `https://quannguyens-ai-cskh.onrender.com/api/webhook/meta` |
-| Zalo OA | `https://quannguyens-ai-cskh.onrender.com/api/webhook/zalo` |
-| SePay thanh toán | `https://quannguyens-ai-cskh.onrender.com/api/webhook/sepay` |
-| Google Sheets (GAS) | `https://quannguyens-ai-cskh.onrender.com/api/webhook/google-sheets` |
+| Meta (Messenger/Instagram/Threads) | `https://cskh-2m9m.onrender.com/api/webhook/meta` |
+| Zalo OA | `https://cskh-2m9m.onrender.com/api/webhook/zalo` |
+| SePay thanh toán | `https://cskh-2m9m.onrender.com/api/webhook/sepay` |
+| Google Sheets (GAS) | `https://cskh-2m9m.onrender.com/api/webhook/google-sheets` |
 | Meta Verify Token | Giá trị `META_VERIFY_TOKEN` đã cấu hình |
 
 ---
