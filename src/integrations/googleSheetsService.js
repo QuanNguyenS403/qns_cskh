@@ -272,11 +272,20 @@ export class GoogleSheetsService {
       })
 
       if (!response.ok) {
-        console.warn(`⚠️ [GOOGLE SHEETS POLL] Lỗi tải CSV (HTTP ${response.status})`)
+        if (response.status === 401 || response.status === 403) {
+          console.warn(`⚠️ [GOOGLE SHEETS POLL] Google Sheet đang ở chế độ Riêng tư (HTTP ${response.status}). Vui lòng chọn "Chia sẻ" > "Bất kỳ ai có đường liên kết đều có thể xem" trên Google Sheet.`)
+        } else {
+          console.warn(`⚠️ [GOOGLE SHEETS POLL] Lỗi tải CSV từ Google Sheet (HTTP ${response.status})`)
+        }
         return { status: 'ERROR', httpStatus: response.status }
       }
 
       const csvText = await response.text()
+      if (csvText.startsWith('<!DOCTYPE html') || csvText.includes('<html')) {
+        console.warn('⚠️ [GOOGLE SHEETS POLL] Google Sheet trả về trang đăng nhập HTML thay vì CSV. Vui lòng mở quyền "Bất kỳ ai có đường liên kết đều có thể xem" trên Google Sheet để hệ thống tự động đọc được dữ liệu.')
+        return { status: 'RESTRICTED', error: 'Sheet is restricted. Requires "Anyone with link can view" permission.' }
+      }
+
       const rows = parseCsv(csvText)
 
       let processedCount = 0
@@ -333,6 +342,9 @@ export class GoogleSheetsService {
     }
 
     console.log(`🔄 [GOOGLE SHEETS POLLER] Đã kích hoạt quét tự động mỗi ${Math.round(intervalMs / 1000)} giây (Miễn phí 100% trọn đời).`)
+    if (config.GOOGLE_SHEET_ID) {
+      console.log(`   Theo dõi Sheet ID: ${config.GOOGLE_SHEET_ID}`)
+    }
 
     // Chạy lần đầu ngay khi khởi động
     setTimeout(() => {
