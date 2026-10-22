@@ -119,9 +119,10 @@ export class MayOrchestrator {
     else if (isRushed) emotionSignal = 'rushed'
     else if (isHesitant) emotionSignal = 'hesitant'
 
-    // ── 1.1. CHÀO HỎI TỰ NHIÊN (Lô, Alo, Hi, Hello, Chào shop, Sốp...) ──
-    const isGreeting = /^(lô|lo|alo|chào|chào shop|chao shop|hi|hello|hey|shop ơi|shop oi|ad ơi|ad oi|sốp|sop)$/i.test(rawText.trim()) ||
-      /^(lô|lo|alo|hi|hello)\\s+(shop|ad|bạn|sốp)/i.test(rawText.trim())
+    // ── 1.1. CHÀO HỎI TỰ NHIÊN & GỌI SHOP (Lô, Alo, Hi, Hello, Chào shop, Sốp, Ra đây, Có ai không...) ──
+    const cleanGreeting = rawText.replace(/[?.,!…~]/g, '').trim()
+    const isGreeting = /^(lô|lo|alo|chào|chào shop|chao shop|hi|hello|hey|shop ơi|shop oi|ad ơi|ad oi|sốp|sop|ra đây|ra day|có ai không|co ai khong|ai đó|ai do|có đó không|co do khong)$/i.test(cleanGreeting) ||
+      /^(lô|lo|alo|hi|hello)\s+(shop|ad|bạn|sốp)/i.test(cleanGreeting)
     if (isGreeting) {
       customerMessage = 'Dạ QuanNguyenS xin chào bạn! Mình là trợ lý AI của QuanNguyenS. Mình luôn có mặt 24/7 để hỗ trợ bạn xem mẫu pijama, tư vấn size theo chiều cao cân nặng, báo giá ưu đãi và hỗ trợ đơn hàng ạ. Bạn đang cần shop hỗ trợ thông tin gì ạ?'
       intentCodes.push('greeting')

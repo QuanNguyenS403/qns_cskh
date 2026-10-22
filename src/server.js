@@ -253,8 +253,8 @@ app.post('/api/webhook/meta', webhookLimiter, async (req, res) => {
       }
 
       // Gửi phản hồi qua adapter tương ứng có can_send bảo vệ
+      const lastCustomerInteractionAt = inboundMessage.occurredAt || new Date().toISOString()
       if (inboundMessage.channel === 'messenger') {
-        const lastCustomerInteractionAt = inboundMessage.occurredAt || new Date().toISOString()
         await messengerAdapter.sendMessage({ recipientId: inboundMessage.channelSenderId, text: agentResponse.customer_message, lastCustomerInteractionAt })
       } else if (inboundMessage.channel === 'instagram') {
         await instagramAdapter.sendMessage({ recipientId: inboundMessage.channelSenderId, text: agentResponse.customer_message, lastCustomerInteractionAt })
