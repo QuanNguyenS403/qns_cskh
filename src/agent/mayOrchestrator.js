@@ -15,6 +15,8 @@ import { PricingService } from '../pricing/pricingService.js'
 import { KnowledgeBase, normalizeVietnamese } from '../knowledge/knowledgeBase.js'
 import { getApprovedPolicy, POLICY_TYPES } from '../policies/policyRegistry.js'
 import { GroundingChecker } from './groundingChecker.js'
+import { buildSystemPrompt } from './systemPrompt.js'
+import { llmClient } from './llmClient.js'
 
 export class MayOrchestrator {
   constructor(db) {
@@ -340,6 +342,46 @@ export class MayOrchestrator {
         evidenceRefs,
         emotionSignal,
       })
+    }
+
+    // ── 4.5. GOOGLE GEMINI LLM INTERACTION (Khi cấu hình GEMINI_API_KEY) ──
+    if (llmClient.apiKey) {
+      try {
+        const systemPrompt = buildSystemPrompt({
+          trustedContext: {
+            channel,
+            customer_verification: conversationState.customerVerification || 'UNVERIFIED',
+          },
+          taskContext: {
+            intents: intentCodes,
+            active_product_id: matchedProduct?.sku || conversationState.activeProductId || null,
+          },
+        })
+
+        const llmResult = await llmClient.generateMayResponse({
+          systemPrompt,
+          userMessage: rawText,
+          history: conversationState.history || [],
+        })
+
+        if (llmResult && llmResult.customer_message) {
+          return this._finalizeOutput({
+            customerMessage: llmResult.customer_message,
+            language: llmResult.language || 'vi',
+            intentCodes: llmResult.intent_codes || intentCodes,
+            nextStep: llmResult.next_step || 'INFORM',
+            actionProposals: llmResult.action_proposals || [],
+            evidenceRefs: [...evidenceRefs, ...(llmResult.evidence_refs || [])],
+            memoryProposals: llmResult.memory_proposals || [],
+            promiseProposals: llmResult.promise_proposals || [],
+            handoff: llmResult.handoff || handoff,
+            needsIdentityVerification: llmResult.needs_identity_verification || false,
+            emotionSignal: llmResult.emotion_signal || emotionSignal,
+          })
+        }
+      } catch (llmErr) {
+        console.warn('⚠️ [GEMINI GENERATION BYPASSED]:', llmErr.message)
+      }
     }
 
     // ── 5. PHẢN HỒI MẶC ĐỊNH THÂN THIỆN ──────────────────────────

@@ -6,6 +6,10 @@ import { getDb } from './db/connection.js'
 import { runMigrations } from './db/migrations.js'
 import { killSwitch } from './config/killSwitch.js'
 import { handleMetaWebhookGet, handleMetaWebhookPost } from './channels/metaWebhook.js'
+import { messengerAdapter } from './channels/messengerAdapter.js'
+import { instagramAdapter } from './channels/instagramAdapter.js'
+import { threadsAdapter } from './channels/threadsAdapter.js'
+import { zaloAdapter } from './channels/zaloAdapter.js'
 import { eventGateway } from './events/eventGateway.js'
 import { createRateLimiter } from './security/rateLimiter.js'
 
@@ -219,6 +223,41 @@ app.post('/api/webhook/meta', webhookLimiter, async (req, res) => {
   })
 })
 
+// ── ZALO OA PLATFORM WEBHOOK ─────────────────────────────────
+app.get('/api/webhook/zalo', (req, res) => {
+  return res.send(req.query.challenge || 'OK')
+})
+
+app.post('/api/webhook/zalo', webhookLimiter, async (req, res) => {
+  try {
+    const inbound = zaloAdapter.parseInboundEvent(req.body)
+    if (!inbound) {
+      return res.json({ success: true, ignored: true })
+    }
+
+    console.log(`📩 [INBOUND ZALO OA] Từ ${inbound.channelSenderId}: "${inbound.text}"`)
+    const db = getDb()
+    const orchestrator = new MayOrchestrator(db)
+    const mayResponse = await orchestrator.processMessage({
+      text: inbound.text,
+      channel: 'zalo',
+      senderId: inbound.channelSenderId,
+    })
+
+    if (mayResponse.customer_message) {
+      await zaloAdapter.sendTextMessage({
+        recipientId: inbound.channelSenderId,
+        text: mayResponse.customer_message,
+      })
+    }
+
+    return res.json({ success: true, status: 'PROCESSED' })
+  } catch (err) {
+    console.error(`❌ [ZALO WEBHOOK ERROR]:`, err.message)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
 // ── SEPAY / BANK PAYMENT WEBHOOK ─────────────────────────────
 app.post('/api/webhook/sepay', webhookLimiter, async (req, res) => {
   try {
@@ -310,9 +349,15 @@ const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolv
 if (isMain) {
   app.listen(config.PORT, '0.0.0.0', () => {
     console.log(`\n======================================================`)
-    console.log(`🤖 QuanNguyenS AI CSKH Gateway running on: http://localhost:${config.PORT}`)
-    console.log(`   Meta Webhook: http://localhost:${config.PORT}/api/webhook/meta`)
+    console.log(`🤖 QUANNGUYENS AI CSKH (MAY) PRODUCTION GATEWAY`)
+    console.log(`   Base URL:     http://localhost:${config.PORT}`)
     console.log(`   Health Check: http://localhost:${config.PORT}/api/health`)
+    console.log(`   Chat API:     http://localhost:${config.PORT}/api/chat`)
+    console.log(`   Meta Webhook: http://localhost:${config.PORT}/api/webhook/meta`)
+    console.log(`   Zalo Webhook: http://localhost:${config.PORT}/api/webhook/zalo`)
+    console.log(`   SePay Webhook:http://localhost:${config.PORT}/api/webhook/sepay`)
+    console.log(`   Environment:  ${config.NODE_ENV.toUpperCase()}`)
+    console.log(`   Outbound:     ${config.OUTBOUND_ENABLED ? 'ENABLED (24/7 Automation)' : 'STANDBY'}`)
     console.log(`======================================================\n`)
   })
 }

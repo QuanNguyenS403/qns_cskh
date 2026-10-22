@@ -28,6 +28,69 @@ export class ZaloAdapter {
     }
   }
 
+  /**
+   * Gửi tin nhắn văn bản tư vấn CSKH qua Zalo OA (OpenAPI v3.0 / CS)
+   */
+  async sendTextMessage({
+    recipientId,
+    text,
+    fetchImpl = globalThis.fetch,
+  }) {
+    const canSendCheck = canSendGate.evaluate({
+      customerId: recipientId,
+      channel: 'zalo',
+      messageType: 'support',
+    })
+
+    if (canSendCheck.decision !== 'ALLOW') {
+      return { sent: false, reason: canSendCheck.reasonCode, message: canSendCheck.message }
+    }
+
+    if (!this.token) {
+      console.warn(`⚠️ [ZALO MOCK] ZALO_ACCESS_TOKEN chưa cấu hình. Trả kết quả giả lập an toàn.`)
+      return {
+        sent: true,
+        mock: true,
+        msgId: `mock_zalo_${Date.now()}`,
+      }
+    }
+
+    try {
+      const response = await fetchImpl(`${this.zaloApiUrl}/cs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          access_token: this.token,
+        },
+        body: JSON.stringify({
+          recipient: { user_id: recipientId },
+          message: { text },
+        }),
+      })
+
+      const data = await response.json()
+      if (data.error !== 0) {
+        return { sent: false, error: data.message, errorCode: data.error }
+      }
+
+      auditLogger.logAction({
+        actorType: 'AI_AGENT',
+        actorId: 'may',
+        actionName: 'ZALO_MESSAGE_SENT',
+        targetEntityType: 'customer',
+        targetEntityId: recipientId,
+        inputPayload: { text },
+        resultStatus: 'SUCCEEDED',
+        evidenceRef: data.data?.msg_id,
+      })
+
+      return { sent: true, msgId: data.data?.msg_id }
+    } catch (err) {
+      console.error(`🚨 [ZALO NETWORK ERROR]:`, err.message)
+      return { sent: false, error: err.message }
+    }
+  }
+
   async sendTemplateMessage({
     recipientId,
     templateId,

@@ -5,7 +5,7 @@ import fs from 'fs'
 dotenv.config()
 
 export const config = {
-  NODE_ENV: process.env.NODE_ENV || 'development',
+  NODE_ENV: process.env.NODE_ENV || 'production',
   PORT: parseInt(process.env.PORT || '3002', 10),
   TIMEZONE: process.env.TIMEZONE || 'Asia/Ho_Chi_Minh',
   CURRENCY: process.env.CURRENCY || 'VND',
@@ -24,26 +24,39 @@ export const config = {
 
   LLM_PROVIDER: process.env.LLM_PROVIDER || 'gemini',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+  GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
   GROQ_API_KEY: process.env.GROQ_API_KEY || '',
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
 
+  // Meta (Facebook Page & Messenger)
   META_APP_ID: process.env.META_APP_ID || '',
   META_APP_SECRET: process.env.META_APP_SECRET || '',
   META_VERIFY_TOKEN: process.env.META_VERIFY_TOKEN || 'quannguyens_meta_verify_token_2026',
   META_PAGE_ID: process.env.META_PAGE_ID || '',
   META_PAGE_ACCESS_TOKEN: process.env.META_PAGE_ACCESS_TOKEN || '',
 
+  // Instagram Direct Messages
   INSTAGRAM_ACCOUNT_ID: process.env.INSTAGRAM_ACCOUNT_ID || '',
   INSTAGRAM_ACCESS_TOKEN: process.env.INSTAGRAM_ACCESS_TOKEN || '',
 
+  // Threads API
   THREADS_USER_ID: process.env.THREADS_USER_ID || '',
   THREADS_ACCESS_TOKEN: process.env.THREADS_ACCESS_TOKEN || '',
 
+  // Zalo Official Account
   ZALO_OA_ID: process.env.ZALO_OA_ID || '',
   ZALO_APP_ID: process.env.ZALO_APP_ID || '',
   ZALO_SECRET_KEY: process.env.ZALO_SECRET_KEY || '',
   ZALO_ACCESS_TOKEN: process.env.ZALO_ACCESS_TOKEN || '',
+  ZALO_REFRESH_TOKEN: process.env.ZALO_REFRESH_TOKEN || '',
 
+  // Thanh toán VietQR & SePay Webhook
+  SEPAY_WEBHOOK_API_KEY: process.env.SEPAY_WEBHOOK_API_KEY || '',
+  VIETQR_BANK_ID: process.env.VIETQR_BANK_ID || 'MBBank',
+  VIETQR_ACCOUNT_NO: process.env.VIETQR_ACCOUNT_NO || '',
+  VIETQR_ACCOUNT_NAME: process.env.VIETQR_ACCOUNT_NAME || 'QUAN NGUYEN S',
+
+  // Outbound & Scheduler Controls
   OUTBOUND_ENABLED: process.env.OUTBOUND_ENABLED === 'true',
   QUIET_HOURS_START: process.env.QUIET_HOURS_START || '20:00',
   QUIET_HOURS_END: process.env.QUIET_HOURS_END || '09:00',
