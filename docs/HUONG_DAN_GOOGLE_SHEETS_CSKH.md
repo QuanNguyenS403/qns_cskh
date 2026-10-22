@@ -46,7 +46,30 @@ Tài liệu này hướng dẫn chi tiết quy trình:
 
 ---
 
-### 🌟 Phương án 2: Tự động quét nền (Không cần cài Script)
+### 🌟 Phương án 2: Tự động quét nền qua Google Service Account (Bảo mật cao, Sheet Riêng tư)
+
+Phương án này cho phép bạn giữ file Google Sheet ở chế độ **Riêng tư (Restricted)**, không cần mở quyền cho ai khác xem, mà chỉ cấp quyền riêng cho email của bot:
+
+#### Các bước thiết lập Service Account (Hoàn toàn Free 100%):
+1. Truy cập [Google Cloud Console](https://console.cloud.google.com/) (Đăng nhập bằng tài khoản Google bất kỳ, hoàn toàn miễn phí không cần thẻ).
+2. Tạo một Project mới (ví dụ: `QuanNguyenS-CSKH`) hoặc chọn project có sẵn.
+3. Vào mục **APIs & Services** > **Library** > Tìm kiếm `Google Sheets API` > Bấm **Enable (Bật)**.
+4. Vào mục **APIs & Services** > **Credentials** > Bấm **Create Credentials** > Chọn **Service Account**:
+   - Đặt tên: `quannguyens-sheet-reader`
+   - Bấm **Done**.
+5. Bấm vào Service Account vừa tạo > Sang tab **Keys (Khóa)** > Bấm **Add Key** > **Create new key** > Chọn loại **JSON** > Bấm **Create**.
+6. Một file `.json` sẽ tự động tải về máy tính. Bạn đổi tên file thành `google-service-account.json` và chép vào thư mục:
+   ```
+   D:\CSKH\credentials\google-service-account.json
+   ```
+7. **Chia sẻ Sheet cho Bot:**
+   - Mở file `.json` vừa tải về, copy dòng `client_email` (dạng `quannguyens-sheet-reader@xxx.iam.gserviceaccount.com`).
+   - Mở Google Sheet `1TnpncVKRa66Rjb_IFq_-W5yAWS-Lyvb8sQYBjHQCJec` > Bấm **Chia sẻ (Share)** > Dán email trên vào > Chọn quyền **Người xem (Viewer)** > Bấm **Gửi**.
+8. Xong! Hệ thống AI Agent sẽ dùng chữ ký số RS256 để truy cập trực tiếp Google Sheet của bạn một cách bảo mật tuyệt đối 24/7.
+
+---
+
+### 🌟 Phương án 3: Quét nền qua liên kết công khai (Không cần tạo Service Account)
 
 Nếu bạn không muốn cài Apps Script, hệ thống đã tích hợp sẵn cơ chế **Auto-Poller** tự động quét Google Sheet mỗi 30 giây:
 

@@ -16,6 +16,7 @@ import { config } from '../config/env.js'
 import { messengerAdapter } from '../channels/messengerAdapter.js'
 import { instagramAdapter } from '../channels/instagramAdapter.js'
 import { zaloAdapter } from '../channels/zaloAdapter.js'
+import { googleServiceAccount } from './googleServiceAccount.js'
 import { auditLogger } from '../security/auditLogger.js'
 
 /**
@@ -250,100 +251,121 @@ export class GoogleSheetsService {
   }
 
   /**
-   * Tự động quét (Poll) Google Sheet định kỳ qua liên kết CSV Export Free
+   * Tự động quét (Poll) Google Sheet định kỳ (Ưu tiên Google Service Account API, Fallback CSV)
    */
   static async pollGoogleSheet(db) {
-    let csvUrl = config.GOOGLE_SHEET_CSV_URL
+    let rows = []
+    let fetchMethod = 'CSV Export'
 
-    // Nếu chỉ có GOOGLE_SHEET_ID, tự động tạo URL CSV export miễn phí của Google
-    if (!csvUrl && config.GOOGLE_SHEET_ID) {
-      csvUrl = `https://docs.google.com/spreadsheets/d/${config.GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv`
-    }
-
-    if (!csvUrl) {
-      return { status: 'SKIPPED', reason: 'Chưa cấu hình GOOGLE_SHEET_CSV_URL hoặc GOOGLE_SHEET_ID' }
-    }
-
-    try {
-      const response = await globalThis.fetch(csvUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) QuanNguyenS-CSKH-Poller/1.0',
-        },
-      })
-
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          console.warn(`⚠️ [GOOGLE SHEETS POLL] Google Sheet đang ở chế độ Riêng tư (HTTP ${response.status}). Vui lòng chọn "Chia sẻ" > "Bất kỳ ai có đường liên kết đều có thể xem" trên Google Sheet.`)
-        } else {
-          console.warn(`⚠️ [GOOGLE SHEETS POLL] Lỗi tải CSV từ Google Sheet (HTTP ${response.status})`)
-        }
-        return { status: 'ERROR', httpStatus: response.status }
+    // 1. Thử lấy dữ liệu trực tiếp bằng Google Service Account API (Bảo mật, hoạt động trên Sheet riêng tư)
+    const saResult = await googleServiceAccount.fetchSheetRows({ sheetId: config.GOOGLE_SHEET_ID })
+    if (saResult.success && Array.isArray(saResult.rows)) {
+      rows = saResult.rows
+      fetchMethod = `Service Account API (${saResult.clientEmail})`
+    } else {
+      // 2. Fallback: Nếu chưa nạp Service Account, thử quét qua CSV Export URL
+      let csvUrl = config.GOOGLE_SHEET_CSV_URL
+      if (!csvUrl && config.GOOGLE_SHEET_ID) {
+        csvUrl = `https://docs.google.com/spreadsheets/d/${config.GOOGLE_SHEET_ID}/export?format=csv`
       }
 
-      const csvText = await response.text()
-      if (csvText.startsWith('<!DOCTYPE html') || csvText.includes('<html')) {
-        console.warn('⚠️ [GOOGLE SHEETS POLL] Google Sheet trả về trang đăng nhập HTML thay vì CSV. Vui lòng mở quyền "Bất kỳ ai có đường liên kết đều có thể xem" trên Google Sheet để hệ thống tự động đọc được dữ liệu.')
-        return { status: 'RESTRICTED', error: 'Sheet is restricted. Requires "Anyone with link can view" permission.' }
+      if (!csvUrl) {
+        return { status: 'SKIPPED', reason: 'Chưa cấu hình GOOGLE_SHEET_ID hoặc Google Service Account' }
       }
 
-      const rows = parseCsv(csvText)
+      try {
+        const response = await globalThis.fetch(csvUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) QuanNguyenS-CSKH-Poller/1.0',
+          },
+        })
 
-      let processedCount = 0
-
-      for (const row of rows) {
-        // Tìm các cột tương ứng theo các biến thể tên cột phổ biến
-        const orderId = row['ma don'] || row['ma don hang'] || row['order id'] || row['order_id'] || row['ma'] || ''
-        const status = (row['trang thai'] || row['status'] || row['tinh trang'] || '').toUpperCase()
-        const customerName = row['ten khach'] || row['ten'] || row['khach hang'] || row['customer'] || row['ho ten'] || 'Khách hàng'
-        const customerPhone = row['sdt'] || row['so dien thoai'] || row['phone'] || ''
-        const items = row['san pham'] || row['items'] || row['don hang'] || row['mon hang'] || ''
-        const channel = (row['kenh'] || row['channel'] || 'messenger').toLowerCase()
-        const channelSenderId = row['id kenh'] || row['sender id'] || row['sender_id'] || row['id_khach'] || row['facebook_id'] || ''
-
-        // Kiểm tra xem trạng thái có phải là ĐÃ GIAO / ĐÃ NHẬN thành công không
-        const isDelivered = /ĐÃ GIAO|DA GIAO|ĐÃ NHẬN|DA NHAN|GIAO THÀNH CÔNG|GIAO THANH CONG|DELIVERED|THÀNH CÔNG/i.test(status)
-
-        if (orderId && isDelivered) {
-          const cleanOrderId = String(orderId).trim().toUpperCase()
-          const businessKey = `checkin:${cleanOrderId}`
-
-          // Kiểm tra xem đã xử lý chưa
-          const existingJob = db.prepare(`SELECT id FROM jobs WHERE business_key = ?`).get(businessKey)
-          if (!existingJob) {
-            console.log(`📦 [GOOGLE SHEETS DISCOVERY] Phát hiện đơn hàng đã giao thành công: #${cleanOrderId} (${customerName})`)
-            await this.handleDeliveryConfirmation(db, {
-              orderId: cleanOrderId,
-              customerName,
-              customerPhone,
-              items,
-              channel,
-              channelSenderId,
-              confirmedBy: 'google_sheet_poller',
-            })
-            processedCount++
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            console.warn(`⚠️ [GOOGLE SHEETS POLL] Google Sheet đang ở chế độ Riêng tư (HTTP ${response.status}).`)
+            if (saResult.clientEmail) {
+              console.warn(`   👉 Hãy mở Google Sheet > "Chia sẻ" với Email Service Account: ${saResult.clientEmail}`)
+            } else {
+              console.warn(`   👉 Để quét trực tiếp không cần mở công khai, hãy cấp quyền cho Email Service Account!`)
+            }
+          } else {
+            console.warn(`⚠️ [GOOGLE SHEETS POLL] Lỗi tải CSV từ Google Sheet (HTTP ${response.status})`)
           }
+          return { status: 'ERROR', httpStatus: response.status }
+        }
+
+        const csvText = await response.text()
+        if (csvText.startsWith('<!DOCTYPE html') || csvText.includes('<html')) {
+          console.warn('⚠️ [GOOGLE SHEETS POLL] Google Sheet trả về trang đăng nhập HTML. Hãy cấp quyền cho Google Service Account để đọc dữ liệu an toàn.')
+          return { status: 'RESTRICTED', error: 'Requires Service Account permission or Anyone with link can view' }
+        }
+
+        rows = parseCsv(csvText)
+      } catch (err) {
+        console.error('🚨 [GOOGLE SHEETS CSV FALLBACK ERROR]:', err.message)
+        return { status: 'ERROR', error: err.message }
+      }
+    }
+
+    let processedCount = 0
+
+    for (const row of rows) {
+      // Tìm các cột tương ứng theo các biến thể tên cột phổ biến
+      const orderId = row['ma don'] || row['ma don hang'] || row['order id'] || row['order_id'] || row['ma'] || ''
+      const status = (row['trang thai'] || row['status'] || row['tinh trang'] || '').toUpperCase()
+      const customerName = row['ten khach'] || row['ten'] || row['khach hang'] || row['customer'] || row['ho ten'] || 'Khách hàng'
+      const customerPhone = row['sdt'] || row['so dien thoai'] || row['phone'] || ''
+      const items = row['san pham'] || row['items'] || row['don hang'] || row['mon hang'] || ''
+      const channel = (row['kenh'] || row['channel'] || 'messenger').toLowerCase()
+      const channelSenderId = row['id kenh'] || row['sender id'] || row['sender_id'] || row['id_khach'] || row['facebook_id'] || ''
+
+      // Kiểm tra xem trạng thái có phải là ĐÃ GIAO / ĐÃ NHẬN thành công không
+      const isDelivered = /ĐÃ GIAO|DA GIAO|ĐÃ NHẬN|DA NHAN|GIAO THÀNH CÔNG|GIAO THANH CONG|DELIVERED|THÀNH CÔNG/i.test(status)
+
+      if (orderId && isDelivered) {
+        const cleanOrderId = String(orderId).trim().toUpperCase()
+        const businessKey = `checkin:${cleanOrderId}`
+
+        // Kiểm tra xem đã xử lý chưa
+        const existingJob = db.prepare(`SELECT id FROM jobs WHERE business_key = ?`).get(businessKey)
+        if (!existingJob) {
+          console.log(`📦 [GOOGLE SHEETS DISCOVERY] Phát hiện đơn hàng đã giao thành công (${fetchMethod}): #${cleanOrderId} (${customerName})`)
+          await this.handleDeliveryConfirmation(db, {
+            orderId: cleanOrderId,
+            customerName,
+            customerPhone,
+            items,
+            channel,
+            channelSenderId,
+            confirmedBy: `google_sheet_poller (${fetchMethod})`,
+          })
+          processedCount++
         }
       }
-
-      return { status: 'SUCCEEDED', rowsScanned: rows.length, processedCount }
-    } catch (err) {
-      console.error('🚨 [GOOGLE SHEETS POLL EXCEPTION]:', err.message)
-      return { status: 'ERROR', error: err.message }
     }
+
+    return { status: 'SUCCEEDED', fetchMethod, rowsScanned: rows.length, processedCount }
   }
 
   /**
    * Khởi động tiến trình chạy nền tự động quét Google Sheet theo chu kỳ
    */
   static startPoller(db, intervalMs = config.GOOGLE_SHEET_POLL_INTERVAL_MS) {
-    if (!config.GOOGLE_SHEET_CSV_URL && !config.GOOGLE_SHEET_ID) {
-      console.log('ℹ️ [GOOGLE SHEETS POLLER] Chế độ quét nền chờ cấu hình (GOOGLE_SHEET_ID / GOOGLE_SHEET_CSV_URL). Webhook vẫn hoạt động tức thời 24/7.')
+    const creds = googleServiceAccount.getCredentials()
+
+    if (!config.GOOGLE_SHEET_CSV_URL && !config.GOOGLE_SHEET_ID && !creds) {
+      console.log('ℹ️ [GOOGLE SHEETS POLLER] Chế độ quét nền chờ cấu hình (GOOGLE_SHEET_ID / Google Service Account). Webhook vẫn hoạt động tức thời 24/7.')
       return null
     }
 
     console.log(`🔄 [GOOGLE SHEETS POLLER] Đã kích hoạt quét tự động mỗi ${Math.round(intervalMs / 1000)} giây (Miễn phí 100% trọn đời).`)
     if (config.GOOGLE_SHEET_ID) {
       console.log(`   Theo dõi Sheet ID: ${config.GOOGLE_SHEET_ID}`)
+    }
+    if (creds) {
+      console.log(`   Google Service Account: ${creds.clientEmail} (${creds.source})`)
+    } else {
+      console.log(`   Xác thực: CSV Poller (Chưa gắn Service Account JSON)`)
     }
 
     // Chạy lần đầu ngay khi khởi động

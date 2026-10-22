@@ -67,9 +67,16 @@ export const config = {
   // Google Sheets Đồng bộ theo dõi đơn hàng (100% Free trọn đời)
   GOOGLE_SHEET_ID: process.env.GOOGLE_SHEET_ID || '',
   GOOGLE_SHEET_CSV_URL: process.env.GOOGLE_SHEET_CSV_URL || '',
+  GOOGLE_SHEET_RANGE: process.env.GOOGLE_SHEET_RANGE || 'A1:Z500',
   GOOGLE_SHEET_WEBHOOK_SECRET: process.env.GOOGLE_SHEET_WEBHOOK_SECRET || 'quannguyens_sheets_secret_2026',
   GOOGLE_SHEET_POLL_INTERVAL_MS: parseInt(process.env.GOOGLE_SHEET_POLL_INTERVAL_MS || '30000', 10),
   GOOGLE_SHEET_AUTO_SYNC: process.env.GOOGLE_SHEET_AUTO_SYNC === 'true',
+
+  // Google Service Account (Xác thực trực tiếp không cần chia sẻ công khai)
+  GOOGLE_SERVICE_ACCOUNT_KEY_PATH: process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH || '',
+  GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL: process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL || '',
+  GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '',
+  GOOGLE_SERVICE_ACCOUNT_JSON: process.env.GOOGLE_SERVICE_ACCOUNT_JSON || '',
 
   // Tự động hóa chăm sóc vòng đời & Giờ yên tĩnh
   OUTBOUND_ENABLED: process.env.OUTBOUND_ENABLED === 'true',

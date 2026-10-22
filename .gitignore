@@ -8,3 +8,7 @@ data/*.db*
 coverage/
 dist/
 tmp/
+credentials/*.json
+!credentials/README.md
+*service-account*.json
+*.key.json
