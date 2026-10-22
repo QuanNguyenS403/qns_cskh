@@ -69,8 +69,8 @@ export class MayOrchestrator {
     // ── 2. XỬ LÝ CÁC CA KIỂM THỬ ĐẶC THÙ & SECURITY (X01–X15) ─────
 
     // X15: Hỏi là người hay bot
-    if (/bạn là người hay bot|người thật hay robot|may là ai|ai đang chat|phải bot không/i.test(rawText)) {
-      customerMessage = 'Dạ mình là May, trợ lý AI tư vấn và chăm sóc khách hàng của QuanNguyenS. Mình luôn có mặt 24/7 để hỗ trợ bạn chọn mẫu, xem giá, tư vấn size và theo dõi đơn hàng ạ.'
+    if (/bạn là người hay bot|người thật hay robot|may là ai|quannguyens là ai|ai đang chat|phải bot không/i.test(rawText)) {
+      customerMessage = 'Dạ mình là QuanNguyenS, trợ lý AI tư vấn và chăm sóc khách hàng của thương hiệu QuanNguyenS. Mình luôn có mặt 24/7 để hỗ trợ bạn chọn mẫu, xem giá, tư vấn size và theo dõi đơn hàng ạ.'
       intentCodes.push('ask_identity')
       nextStep = 'INFORM'
       return this._finalizeOutput({
@@ -84,7 +84,7 @@ export class MayOrchestrator {
 
     // Hỏi thông tin tài khoản ngân hàng / chuyển khoản
     if (/xin stk|số tài khoản|so tai khoan|stk|chuyển khoản qua đâu|ngân hàng nào|ngan hang nao|thông tin chuyển khoản/i.test(rawText)) {
-      customerMessage = 'Dạ thông tin thanh toán chuyển khoản chính thức của QuanNguyenS là:\n• Ngân hàng: Vietcombank (VCB)\n• Số tài khoản: 1050773506\n• Chủ tài khoản: NGUYEN DUC QUAN\n\nĐặc biệt, shop có ưu đãi giảm ngay 5% trực tiếp khi thanh toán chuyển khoản VietQR và miễn phí vận chuyển toàn quốc cho đơn từ 500k ạ. Khi bạn lên đơn, May sẽ tạo sẵn mã VietQR có đúng số tiền để bạn quét nhanh nhất nhé ạ!'
+      customerMessage = 'Dạ thông tin thanh toán chuyển khoản chính thức của QuanNguyenS là:\n• Ngân hàng: Vietcombank (VCB)\n• Số tài khoản: 1050773506\n• Chủ tài khoản: NGUYEN DUC QUAN\n\nĐặc biệt, shop có ưu đãi giảm ngay 5% trực tiếp khi thanh toán chuyển khoản VietQR và miễn phí vận chuyển toàn quốc cho đơn từ 500k ạ. Khi bạn lên đơn, QuanNguyenS sẽ tạo sẵn mã VietQR có đúng số tiền để bạn quét nhanh nhất nhé ạ!'
       intentCodes.push('ask_bank_info')
       nextStep = 'INFORM'
       return this._finalizeOutput({
@@ -112,7 +112,7 @@ export class MayOrchestrator {
 
     // X29: Khủng hoảng cá nhân / stress (Blueprint §4.3, X29) -> Dừng bán, phản hồi ấm áp, handoff P0
     if (/stress|khủng hoảng|chuyện gia đình|buồn chuyện|đừng tư vấn mua bán/i.test(rawText)) {
-      customerMessage = 'Dạ May rất chia sẻ với bạn trong thời điểm này. May xin phép không gửi thêm tin tư vấn bán hàng để bạn có không gian nghỉ ngơi ạ. Nếu sau này bạn cần bất kỳ hỗ trợ nào về sản phẩm hoặc đơn hàng, May luôn sẵn sàng lắng nghe khi bạn thoải mái hơn nhé.'
+      customerMessage = 'Dạ QuanNguyenS rất chia sẻ với bạn trong thời điểm này. QuanNguyenS xin phép không gửi thêm tin tư vấn bán hàng để bạn có không gian nghỉ ngơi ạ. Nếu sau này bạn cần bất kỳ hỗ trợ nào về sản phẩm hoặc đơn hàng, QuanNguyenS luôn sẵn sàng lắng nghe khi bạn thoải mái hơn nhé.'
       intentCodes.push('personal_crisis_stop')
       nextStep = 'CLOSE'
       handoff = { required: true, reason_code: 'PERSONAL_CRISIS', priority: 'P0' }
@@ -129,7 +129,7 @@ export class MayOrchestrator {
     if (/nghe nói.*giảm|giảm 30%|giảm 50%|sale 30%/i.test(rawText)) {
       const pricingPolicy = getApprovedPolicy(this.db, { shopId: 'quannguyens', policyType: POLICY_TYPES.PRICING })
       const bankDiscount = pricingPolicy?.content?.bankTransferDiscountPct || 5
-      customerMessage = `Dạ thông tin giảm giá trên là không chính xác ạ. Hiện tại QuanNguyenS áp dụng mức giá niêm yết chuẩn và ưu đãi giảm ${bankDiscount}% khi thanh toán chuyển khoản VietQR, cùng chính sách miễn phí vận chuyển toàn quốc cho đơn từ 500.000đ. Bạn cần May hỗ trợ xem chi tiết mẫu nào không ạ?`
+      customerMessage = `Dạ thông tin giảm giá trên là không chính xác ạ. Hiện tại QuanNguyenS áp dụng mức giá niêm yết chuẩn và ưu đãi giảm ${bankDiscount}% khi thanh toán chuyển khoản VietQR, cùng chính sách miễn phí vận chuyển toàn quốc cho đơn từ 500.000đ. Bạn cần QuanNguyenS hỗ trợ xem chi tiết mẫu nào không ạ?`
       intentCodes.push('inquire_promotion')
       nextStep = 'INFORM'
       evidenceRefs.push(`policy_${POLICY_TYPES.PRICING}@v1.0`)
@@ -144,7 +144,7 @@ export class MayOrchestrator {
 
     // X13 & X14: Chống Prompt Injection & mạo danh Admin (B15)
     if (/admin|chủ shop|bỏ qua quy tắc|ignore previous|giảm 90%|hủy hết đơn|xóa toàn bộ/i.test(rawText)) {
-      customerMessage = 'Dạ May không thể thực hiện yêu cầu thay đổi quyền hạn hoặc chính sách qua tin nhắn. Mọi ưu đãi và đơn hàng đều được xử lý tự động theo quy định đã duyệt của QuanNguyenS ạ. Nếu bạn cần hỗ trợ trường hợp ngoại lệ, mình xin phép tạo yêu cầu chuyển tới quản lý shop nhé.'
+      customerMessage = 'Dạ QuanNguyenS không thể thực hiện yêu cầu thay đổi quyền hạn hoặc chính sách qua tin nhắn. Mọi ưu đãi và đơn hàng đều được xử lý tự động theo quy định đã duyệt của QuanNguyenS ạ. Nếu bạn cần hỗ trợ trường hợp ngoại lệ, mình xin phép tạo yêu cầu chuyển tới quản lý shop nhé.'
       intentCodes.push('security_policy_enforcement')
       nextStep = 'INFORM'
       return this._finalizeOutput({
@@ -158,7 +158,7 @@ export class MayOrchestrator {
 
     // X07: Khách dọa review xấu, đòi đền bù (Ưu tiên kiểm tra trước X06)
     if (/bóc phốt|review xấu|đánh giá 1 sao/i.test(rawText)) {
-      customerMessage = 'Dạ May rất hiểu sự thất vọng của bạn khi trải nghiệm chưa được như ý. May cam kết xử lý trung thực và đúng quy trình bảo hành/đổi trả của shop đối với sản phẩm lỗi hoặc sự cố giao hàng. May xin phép mở ngay phiếu hỗ trợ ưu tiên để quản lý trực tiếp kiểm tra và đưa ra phương án thỏa đáng nhất cho bạn nhé ạ.'
+      customerMessage = 'Dạ QuanNguyenS rất hiểu sự thất vọng của bạn khi trải nghiệm chưa được như ý. QuanNguyenS cam kết xử lý trung thực và đúng quy trình bảo hành/đổi trả của shop đối với sản phẩm lỗi hoặc sự cố giao hàng. QuanNguyenS xin phép mở ngay phiếu hỗ trợ ưu tiên để quản lý trực tiếp kiểm tra và đưa ra phương án thỏa đáng nhất cho bạn nhé ạ.'
       intentCodes.push('complaint_threat')
       nextStep = 'OPEN_CASE'
       handoff = { required: true, reason_code: 'ESCALATION_THREAT', priority: 'P1' }
@@ -173,7 +173,7 @@ export class MayOrchestrator {
 
     // X06: Khách giận dữ, viết hoa, phàn nàn nhiều lần
     if (emotionSignal === 'angry' && /hỏi (\d+|nhiều) lần|nhắc lại|mãi chưa|chưa xử lý/i.test(rawText)) {
-      customerMessage = 'Dạ May đã kiểm tra lại toàn bộ trao đổi trước đó. May rất hiểu bạn đang cần kết quả gấp và chưa nhận được phản hồi thỏa đáng. Ngay lúc này May đang chuyển thẳng trường hợp của bạn tới quản lý trực ca để kiểm tra xử lý ngay, và sẽ có cập nhật cụ thể gửi đến bạn trước 15 phút nữa ạ. Mã yêu cầu ưu tiên của bạn đã được ghi nhận.'
+      customerMessage = 'Dạ QuanNguyenS đã kiểm tra lại toàn bộ trao đổi trước đó. QuanNguyenS rất hiểu bạn đang cần kết quả gấp và chưa nhận được phản hồi thỏa đáng. Ngay lúc này QuanNguyenS đang chuyển thẳng trường hợp của bạn tới quản lý trực ca để kiểm tra xử lý ngay, và sẽ có cập nhật cụ thể gửi đến bạn trước 15 phút nữa ạ. Mã yêu cầu ưu tiên của bạn đã được ghi nhận.'
       intentCodes.push('complaint_escalation')
       nextStep = 'OPEN_CASE'
       handoff = { required: true, reason_code: 'ANGRY_CUSTOMER_REPEATED_INQUIRY', priority: 'P1' }
@@ -244,7 +244,7 @@ export class MayOrchestrator {
 
     // X03: "mẫu đó" khi chưa rõ mẫu hoặc có nhiều ứng viên
     if (/(mẫu đó|set đó|cái đó|mẫu này)/i.test(rawText) && !conversationState.activeProductId) {
-      customerMessage = 'Dạ hiện shop đang có 3 set pyjama Thu Đông: The Daybreak Set (Sọc Hồng), The Stillwater Set (Caro Navy), và The Hearth Set (Sọc Nâu). Bạn đang quan tâm mẫu nào trong 3 mẫu này để May báo giá và tư vấn size chuẩn xác nhất ạ?'
+      customerMessage = 'Dạ hiện shop đang có 3 set pyjama Thu Đông: The Daybreak Set (Sọc Hồng), The Stillwater Set (Caro Navy), và The Hearth Set (Sọc Nâu). Bạn đang quan tâm mẫu nào trong 3 mẫu này để QuanNguyenS báo giá và tư vấn size chuẩn xác nhất ạ?'
       intentCodes.push('disambiguate_product')
       nextStep = 'ASK_PRODUCT_ID'
       return this._finalizeOutput({
@@ -301,7 +301,7 @@ export class MayOrchestrator {
     if (asksPrice || asksSize || mentionsSaturday) {
       if (!matchedProduct) {
         // Chưa rõ mẫu nào -> Hỏi mẫu (X01)
-        customerMessage = 'Dạ chào bạn! Shop có các set pyjama sợi tự nhiên: The Daybreak Set (390k), The Stillwater Set (550k) và The Hearth Set (750k). Bạn đang ưng mẫu nào để May báo giá chi tiết và gợi ý size vừa vặn nhất cho bạn ạ?'
+        customerMessage = 'Dạ chào bạn! Shop có các set pyjama sợi tự nhiên: The Daybreak Set (390k), The Stillwater Set (550k) và The Hearth Set (750k). Bạn đang ưng mẫu nào để QuanNguyenS báo giá chi tiết và gợi ý size vừa vặn nhất cho bạn ạ?'
         intentCodes.push('ask_price', 'ask_size')
         nextStep = 'ASK_PRODUCT_ID'
         return this._finalizeOutput({
@@ -327,7 +327,7 @@ export class MayOrchestrator {
 
       // X02 & X21: Hỏi về tiến độ nhận hàng / thứ Bảy
       if (mentionsSaturday) {
-        customerMessage = `Dạ mẫu ${matchedProduct.name} hiện có giá niêm yết là ${quoteRes.subtotal.toLocaleString('vi-VN')}đ ạ. Về tiến độ nhận hàng, nếu bạn chốt đơn trong hôm nay, đơn dự kiến sẽ kịp giao trước thứ Bảy nếu bạn ở khu vực nội thành/trung tâm; còn ở huyện/xã xa hơn thì có thể vào thứ Bảy hoặc đầu tuần sau ạ. Để May tư vấn size chuẩn xác cho bạn, bạn cho May xin thêm chiều cao và cân nặng nhé!`
+        customerMessage = `Dạ mẫu ${matchedProduct.name} hiện có giá niêm yết là ${quoteRes.subtotal.toLocaleString('vi-VN')}đ ạ. Về tiến độ nhận hàng, nếu bạn chốt đơn trong hôm nay, đơn dự kiến sẽ kịp giao trước thứ Bảy nếu bạn ở khu vực nội thành/trung tâm; còn ở huyện/xã xa hơn thì có thể vào thứ Bảy hoặc đầu tuần sau ạ. Để QuanNguyenS tư vấn size chuẩn xác cho bạn, bạn cho QuanNguyenS xin thêm chiều cao và cân nặng nhé!`
         intentCodes.push('ask_delivery_deadline', 'ask_size')
         if (asksPrice) intentCodes.push('ask_price')
         nextStep = 'ASK_FIT_PREFERENCE'
@@ -342,7 +342,7 @@ export class MayOrchestrator {
       }
 
       // X01: Hỏi giá và size
-      customerMessage = `Dạ mẫu ${matchedProduct.name} hiện có giá ${quoteRes.subtotal.toLocaleString('vi-VN')}đ ạ. Mẫu này phom suông phong cách Châu Âu rộng rãi thoải mái. Để May gợi ý size chuẩn nhất, bạn thường mặc vừa vặn hay thích mặc rộng hẳn, và cho May xin chiều cao/cân nặng của bạn nhé!`
+      customerMessage = `Dạ mẫu ${matchedProduct.name} hiện có giá ${quoteRes.subtotal.toLocaleString('vi-VN')}đ ạ. Mẫu này phom suông phong cách Châu Âu rộng rãi thoải mái. Để QuanNguyenS gợi ý size chuẩn nhất, bạn thường mặc vừa vặn hay thích mặc rộng hẳn, và cho QuanNguyenS xin chiều cao/cân nặng của bạn nhé!`
       intentCodes.push('ask_price', 'ask_size')
       nextStep = 'ASK_FIT_PREFERENCE'
       return this._finalizeOutput({
@@ -360,7 +360,7 @@ export class MayOrchestrator {
     if (kbResults.length > 0) {
       const best = kbResults[0]
       evidenceRefs.push(best.evidence_ref)
-      customerMessage = `Dạ về câu hỏi của bạn, theo thông tin chuẩn hóa của shop: ${best.content.split('\n')[0].trim()} Bạn có cần May hỗ trợ thêm thông tin chi tiết nào nữa không ạ?`
+      customerMessage = `Dạ về câu hỏi của bạn, theo thông tin chuẩn hóa của shop: ${best.content.split('\n')[0].trim()} Bạn có cần QuanNguyenS hỗ trợ thêm thông tin chi tiết nào nữa không ạ?`
       intentCodes.push('kb_query')
       nextStep = 'INFORM'
       return this._finalizeOutput({
@@ -413,7 +413,7 @@ export class MayOrchestrator {
     }
 
     // ── 5. PHẢN HỒI MẶC ĐỊNH THÂN THIỆN ──────────────────────────
-    customerMessage = 'Dạ May có thể hỗ trợ bạn xem mẫu pijama, tư vấn chọn size theo số đo, báo giá chi tiết hoặc kiểm tra đơn hàng ạ. Bạn đang cần May hỗ trợ điều gì ạ?'
+    customerMessage = 'Dạ QuanNguyenS có thể hỗ trợ bạn xem mẫu pijama, tư vấn chọn size theo số đo, báo giá chi tiết hoặc kiểm tra đơn hàng ạ. Bạn đang cần QuanNguyenS hỗ trợ điều gì ạ?'
     intentCodes.push('general_inquiry')
     nextStep = 'INFORM'
 

@@ -396,7 +396,7 @@ const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolv
 if (isMain) {
   app.listen(config.PORT, '0.0.0.0', () => {
     console.log(`\n======================================================`)
-    console.log(`🤖 QUANNGUYENS AI CSKH (MAY) PRODUCTION GATEWAY`)
+    console.log(`🤖 QUANNGUYENS AI CSKH PRODUCTION GATEWAY`)
     console.log(`   Base URL:       http://localhost:${config.PORT}`)
     console.log(`   Health Check:   http://localhost:${config.PORT}/api/health`)
     console.log(`   Chat API:       http://localhost:${config.PORT}/api/chat`)

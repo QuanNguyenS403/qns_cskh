@@ -240,7 +240,7 @@ export class CaseService {
         case_id: disputeCase.case_id,
         tracking_code: shipment.tracking_code,
         carrier: shipment.carrier,
-        message: `May đã ghi nhận sự cố chưa nhận được kiện hàng dù hệ thống có scan đã giao. May đã mở ngay yêu cầu ưu tiên ${disputeCase.case_id} để đối soát với Viettel Post. Bạn không cần tự liên hệ nhiều bên ạ.`,
+        message: `QuanNguyenS đã ghi nhận sự cố chưa nhận được kiện hàng dù hệ thống có scan đã giao. QuanNguyenS đã mở ngay yêu cầu ưu tiên ${disputeCase.case_id} để đối soát với Viettel Post. Bạn không cần tự liên hệ nhiều bên ạ.`,
         evidence_ref: `case:${disputeCase.case_id}`,
       }
     }

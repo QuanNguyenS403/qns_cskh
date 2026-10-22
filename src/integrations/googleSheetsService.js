@@ -75,16 +75,16 @@ export function parseCsv(text) {
  */
 export function buildPostDeliveryMessage({ customerName = 'bạn', orderId, itemsSummary = '' }) {
   const greeting = customerName && customerName !== 'bạn' && customerName !== 'Khách hàng'
-    ? `Dạ May chào ${customerName} ạ! `
-    : `Dạ May chào bạn ạ! `
+    ? `Dạ QuanNguyenS chào ${customerName} ạ! `
+    : `Dạ QuanNguyenS chào bạn ạ! `
 
   const itemPart = itemsSummary ? ` gồm ${itemsSummary}` : ''
   const orderPart = orderId ? ` (đơn hàng #${orderId})` : ''
 
   return (
-    `${greeting}May thấy kiện hàng của mình${itemPart}${orderPart} đã được giao thành công tới tay mình rồi ạ 🥰\n\n` +
-    `May nhắn để hỏi thăm xem kiện hàng tới nơi có nguyên vẹn không ạ? Bạn đã mở ra mặc thử đồ chưa, phom dáng và chất vải sợi tự nhiên mặc lên người có vừa vặn và thoải mái như ý bạn không ạ?\n\n` +
-    `Nếu có bất kỳ điểm nào bạn chưa ưng ý cần đổi size, hoặc cần May hướng dẫn cách giặt ủi/bảo quản để giữ cho sợi vải luôn mềm mượt, bạn cứ nhắn May để được hỗ trợ ngay bất cứ lúc nào nhé ạ!`
+    `${greeting}QuanNguyenS thấy kiện hàng của mình${itemPart}${orderPart} đã được giao thành công tới tay mình rồi ạ 🥰\n\n` +
+    `QuanNguyenS nhắn để hỏi thăm xem kiện hàng tới nơi có nguyên vẹn không ạ? Bạn đã mở ra mặc thử đồ chưa, phom dáng và chất vải sợi tự nhiên mặc lên người có vừa vặn và thoải mái như ý bạn không ạ?\n\n` +
+    `Nếu có bất kỳ điểm nào bạn chưa ưng ý cần đổi size, hoặc cần QuanNguyenS hướng dẫn cách giặt ủi/bảo quản để giữ cho sợi vải luôn mềm mượt, bạn cứ nhắn QuanNguyenS để được hỗ trợ ngay bất cứ lúc nào nhé ạ!`
   )
 }
 

@@ -130,10 +130,10 @@ export const KNOWLEDGE_DOCS = [
     doc_id: 'privacy_policy_cskh',
     version: 'v1.0',
     category: 'privacy',
-    title: 'Chính sách bảo mật dữ liệu khách hàng & CSKH May',
+    title: 'Chính sách bảo mật dữ liệu khách hàng & CSKH QuanNguyenS',
     tags: ['bao mat', 'du lieu', 'sdt', 'dia chi', 'so do', 'xoa du lieu', 'opt out'],
     content: `
-      - CSKH May cam kết thu thập dữ liệu tối thiểu cần thiết để phục vụ đơn hàng (tên, SĐT giao hàng, địa chỉ).
+      - CSKH QuanNguyenS cam kết thu thập dữ liệu tối thiểu cần thiết để phục vụ đơn hàng (tên, SĐT giao hàng, địa chỉ).
       - Số đo cơ thể và sở thích cá nhân chỉ được lưu trữ khi khách hàng đồng thuận (Consent).
       - Khách hàng có toàn quyền yêu cầu kiểm tra, cập nhật hoặc xóa toàn bộ dữ liệu cá nhân bất cứ lúc nào bằng cách nhắn yêu cầu.
       - Không chia sẻ dữ liệu cho bên thứ ba ngoại trừ đơn vị vận chuyển đối tác để phát hàng.
