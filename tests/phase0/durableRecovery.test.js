@@ -1,4 +1,4 @@
-import test from 'node:test'
+﻿import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'fs'
 import path from 'path'
@@ -40,7 +40,7 @@ test('Phase 0 - Gate T37 & T10: Durable Recovery & Timeout Reconciliation After 
   audit1.logAction({
     operationId,
     actorType: 'AI_AGENT',
-    actorId: 'may',
+    actorId: 'quannguyens',
     actionName: 'commit_order',
     targetEntityType: 'order',
     targetEntityId: 'QNS-RECOVERY-001',

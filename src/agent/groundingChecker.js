@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PRE-FLIGHT GROUNDING & INTEGRITY CHECKER (Blueprint §8.4, §14.5, Prompt A Phase 2)
  * 
  * Kiểm duyệt bản nháp phản hồi trước khi gửi cho khách hoặc thực thi tool:
@@ -15,7 +15,7 @@ export class GroundingChecker {
   /**
    * Kiểm định toàn diện phản hồi của Agent
    * 
-   * @param {Object} output Bản nháp từ May Agent
+   * @param {Object} output Bản nháp từ QuanNguyenS Agent
    * @param {Object} context Ngữ cảnh đối chiếu (quote, catalog, trustedContext, untrustedInput)
    * @returns {{ passed: boolean, sanitizedOutput: Object, violations: Array<string> }}
    */

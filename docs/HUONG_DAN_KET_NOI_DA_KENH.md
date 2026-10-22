@@ -1,4 +1,4 @@
-# HƯỚNG DẪN CẤU HÌNH KẾT NỐI ĐA KÊNH: FACEBOOK, INSTAGRAM, THREADS, ZALO
+﻿# HƯỚNG DẪN CẤU HÌNH KẾT NỐI ĐA KÊNH: FACEBOOK, INSTAGRAM, THREADS, ZALO
 **Dự án:** QuanNguyenS — Hệ Thống AI CSKH 24/7 & Chăm Sóc Vòng Đời  
 **Phạm vi:** Kênh Facebook Messenger, Instagram Direct, Threads API, Zalo Official Account (ZBS)
 
@@ -61,8 +61,8 @@ Hệ thống CSKH đã thiết lập sẵn cổng Webhook hợp nhất cho Meta 
    THREADS_USER_ID=your_threads_user_id
    THREADS_ACCESS_TOKEN=TH...
    ```
-4. **Hoạt động của May trên Threads:**
-   * May sẽ tự động nhận diện các bình luận hoặc nhắc tên (mentions) hỏi về size, chất liệu, giá pijama và trả lời trực tiếp (Reply) trên Threads.
+4. **Hoạt động của QuanNguyenS trên Threads:**
+   * QuanNguyenS sẽ tự động nhận diện các bình luận hoặc nhắc tên (mentions) hỏi về size, chất liệu, giá pijama và trả lời trực tiếp (Reply) trên Threads.
 
 ---
 

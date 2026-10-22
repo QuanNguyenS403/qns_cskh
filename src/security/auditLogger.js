@@ -1,4 +1,4 @@
-import crypto from 'crypto'
+﻿import crypto from 'crypto'
 import { getDb } from '../db/connection.js'
 import { config } from '../config/env.js'
 
@@ -62,7 +62,7 @@ export class AuditLogger {
       tenantId = config.DEFAULT_TENANT_ID,
       shopId = config.DEFAULT_SHOP_ID,
       actorType = 'AI_AGENT', // AI_AGENT | HUMAN_ADMIN | SYSTEM_JOB | CUSTOMER
-      actorId = 'may',
+      actorId = 'quannguyens',
       actionName,
       targetEntityType,
       targetEntityId,

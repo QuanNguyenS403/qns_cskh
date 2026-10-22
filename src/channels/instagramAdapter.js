@@ -1,4 +1,4 @@
-import { config } from '../config/env.js'
+﻿import { config } from '../config/env.js'
 import { canSendGate } from './canSend.js'
 import { auditLogger } from '../security/auditLogger.js'
 
@@ -100,7 +100,7 @@ export class InstagramAdapter {
 
       auditLogger.logAction({
         actorType: 'AI_AGENT',
-        actorId: 'may',
+        actorId: 'quannguyens',
         actionName: 'INSTAGRAM_MESSAGE_SENT',
         targetEntityType: 'customer',
         targetEntityId: recipientId,

@@ -1,4 +1,4 @@
-import { describe, it, beforeEach } from 'node:test'
+﻿import { describe, it, beforeEach } from 'node:test'
 import assert from 'node:assert'
 import { DatabaseSync } from 'node:sqlite'
 import { runMigrations } from '../../src/db/migrations.js'

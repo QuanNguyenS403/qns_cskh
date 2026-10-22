@@ -1,4 +1,4 @@
-import { config } from '../config/env.js'
+﻿import { config } from '../config/env.js'
 import { canSendGate } from './canSend.js'
 import { auditLogger } from '../security/auditLogger.js'
 
@@ -114,7 +114,7 @@ export class MessengerAdapter {
 
       auditLogger.logAction({
         actorType: 'AI_AGENT',
-        actorId: 'may',
+        actorId: 'quannguyens',
         actionName: 'MESSENGER_MESSAGE_SENT',
         targetEntityType: 'customer',
         targetEntityId: recipientId,

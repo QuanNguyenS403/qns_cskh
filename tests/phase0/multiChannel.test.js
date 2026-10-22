@@ -1,4 +1,4 @@
-import test from 'node:test'
+﻿import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'fs'
 import path from 'path'
@@ -152,7 +152,7 @@ test('Phase 0 & Multi-Channel - can_send Runtime & Channel Gate Checks', async (
 
   const msgRes = await messengerAdapter.sendMessage({
     recipientId: 'user_123',
-    text: 'Chào bạn, May có thể hỗ trợ gì cho bạn?',
+    text: 'Chào bạn, QuanNguyenS có thể hỗ trợ gì cho bạn?',
     lastCustomerInteractionAt: interaction2hAgo,
     fetchImpl: mockFetchMeta,
   })

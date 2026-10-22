@@ -1,4 +1,4 @@
-# SỔ TAY VẬN HÀNH HỆ THỐNG AI AGENT CSKH MAY — QUANNGUYENS (quannguyens.com)
+﻿# SỔ TAY VẬN HÀNH HỆ THỐNG AI AGENT CSKH MAY — QUANNGUYENS (quannguyens.com)
 
 **Phiên bản:** 1.0 · **Ngày phát hành:** 22/10/2026 · **Múi giờ:** Asia/Ho_Chi_Minh  
 **Căn cứ:** `QuanNguyenS_AI_CSKH_Master_Blueprint_v2_2026-10-22.md` & Master Build Prompts A & B  

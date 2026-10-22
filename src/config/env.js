@@ -1,4 +1,4 @@
-import dotenv from 'dotenv'
+﻿import dotenv from 'dotenv'
 import path from 'path'
 import fs from 'fs'
 import crypto from 'node:crypto'
@@ -104,8 +104,8 @@ export const config = {
   // Trí tuệ nhân tạo Google Gemini
   LLM_PROVIDER: process.env.LLM_PROVIDER || 'gemini',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
-  GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
-  GEMINI_FALLBACK_MODEL: process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.6-flash',
+  GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
+  GEMINI_FALLBACK_MODEL: process.env.GEMINI_FALLBACK_MODEL || 'gemini-flash-lite-latest',
   GROQ_API_KEY: process.env.GROQ_API_KEY || '',
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
 

@@ -1,4 +1,4 @@
-import crypto from 'crypto'
+﻿import crypto from 'crypto'
 import { config } from '../config/env.js'
 
 /**
@@ -125,7 +125,7 @@ export class ConversationStore {
   }
 
   /**
-   * Lấy lịch sử hội thoại gần nhất để cung cấp ngữ cảnh cho May AI (LLM / Logic)
+   * Lấy lịch sử hội thoại gần nhất để cung cấp ngữ cảnh cho QuanNguyenS AI (LLM / Logic)
    */
   static getRecentMessages(db, conversationId, limit = 20) {
     if (!db || !conversationId) return []

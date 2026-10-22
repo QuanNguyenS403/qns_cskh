@@ -1,4 +1,4 @@
-import { describe, it, beforeEach } from 'node:test'
+﻿import { describe, it, beforeEach } from 'node:test'
 import assert from 'node:assert'
 import { DatabaseSync } from 'node:sqlite'
 import { runMigrations } from '../../src/db/migrations.js'
@@ -7,7 +7,7 @@ import { MayOrchestrator } from '../../src/agent/mayOrchestrator.js'
 import { validateMayOutput } from '../../src/agent/outputSchema.js'
 import { GroundingChecker } from '../../src/agent/groundingChecker.js'
 
-describe('PHASE 2: May Conversation Core, Persona & Grounding (X01–X15, Phụ lục A, C)', () => {
+describe('PHASE 2: QuanNguyenS Conversation Core, Persona & Grounding (X01–X15, Phụ lục A, C)', () => {
   let db
   let orchestrator
 
@@ -44,7 +44,7 @@ describe('PHASE 2: May Conversation Core, Persona & Grounding (X01–X15, Phụ 
       })
 
       assert.ok(res.customer_message.toLowerCase().includes('trợ lý ai'))
-      assert.ok(res.customer_message.includes('May'))
+      assert.ok(res.customer_message.includes('QuanNguyenS'))
       assert.ok(res.evidence_refs.includes('brand_identity@v1.0'))
     })
 

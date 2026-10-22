@@ -1,4 +1,4 @@
-# GOOGLE SERVICE ACCOUNT CREDENTIALS
+﻿# GOOGLE SERVICE ACCOUNT CREDENTIALS
 
 Để AI Agent (May) kết nối trực tiếp vào Google Sheet riêng tư (không cần chia sẻ công khai):
 

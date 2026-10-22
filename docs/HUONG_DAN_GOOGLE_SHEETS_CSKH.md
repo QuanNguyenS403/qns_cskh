@@ -1,4 +1,4 @@
-# QUANNGUYENS — HƯỚNG DẪN KẾT NỐI GOOGLE SHEETS & TỰ ĐỘNG CHĂM SÓC KHÁCH HÀNG (MAY)
+﻿# QUANNGUYENS — HƯỚNG DẪN KẾT NỐI GOOGLE SHEETS & TỰ ĐỘNG CHĂM SÓC KHÁCH HÀNG — QUANNGUYENS
 
 **Phiên bản:** 1.0 · **Môi trường:** Production 24/7 · **Chi phí:** 100% MIỄN PHÍ VÔ THỜI HẠN
 
@@ -20,7 +20,7 @@ Tài liệu này hướng dẫn chi tiết quy trình:
 | QNS-202610-02 | Anh Minh | 0987654321 | The Stillwater Set (Size L) | Đang giao | instagram | 7281920192 |
 
 > **Ghi chú về các cột:**
-> - **Trạng thái:** Khi bạn nhập hoặc chọn `ĐÃ GIAO`, `ĐÃ NHẬN`, hoặc `GIAO THÀNH CÔNG`, May sẽ lập tức gửi tin nhắn chăm sóc.
+> - **Trạng thái:** Khi bạn nhập hoặc chọn `ĐÃ GIAO`, `ĐÃ NHẬN`, hoặc `GIAO THÀNH CÔNG`, QuanNguyenS sẽ lập tức gửi tin nhắn chăm sóc.
 > - **Kênh:** `messenger` (Facebook), `instagram`, hoặc `zalo`.
 > - **ID Kênh:** ID người dùng trên Fanpage/Instagram/Zalo (do khách chat đến trước đó).
 
@@ -90,7 +90,7 @@ Nếu bạn không muốn cài Apps Script, hệ thống đã tích hợp sẵn 
 
 ## III. NỘI DUNG MAY NHẮN TIN CHĂM SÓC KHÁCH HÀNG
 
-Khi bạn xác nhận đơn hàng thành công trên Google Sheet, May sẽ tự động gửi thông điệp ấm áp và tinh tế:
+Khi bạn xác nhận đơn hàng thành công trên Google Sheet, QuanNguyenS sẽ tự động gửi thông điệp ấm áp và tinh tế:
 
 > *"Dạ May chào [Tên khách] ạ! May thấy kiện hàng của mình gồm [Tên sản phẩm] (đơn hàng #[Mã đơn]) đã được giao thành công tới tay mình rồi ạ 🥰*
 > 
@@ -104,4 +104,4 @@ Khi bạn xác nhận đơn hàng thành công trên Google Sheet, May sẽ tự
 
 - **Chống trùng 100%:** Mỗi đơn hàng chỉ được gửi tin chăm sóc sau nhận hàng **đúng 1 lần duy nhất**, dù bạn có sửa trạng thái nhiều lần trên Sheet.
 - **Tôn trọng khách hàng:** Nếu khách từng nhắn *"đừng nhắn nữa / tắt thông báo"*, hệ thống tự động chặn gửi để không làm phiền khách.
-- **Có hồ sơ khiếu nại:** Nếu đơn hàng đang có khiếu nại mở (chưa giải quyết xong), May sẽ tạm dừng gửi tin vui vẻ để tập trung giải quyết sự cố trước.
+- **Có hồ sơ khiếu nại:** Nếu đơn hàng đang có khiếu nại mở (chưa giải quyết xong), QuanNguyenS sẽ tạm dừng gửi tin vui vẻ để tập trung giải quyết sự cố trước.

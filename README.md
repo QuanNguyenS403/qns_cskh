@@ -1,8 +1,8 @@
-# QUANNGUYENS — AI AGENT CSKH & HỆ THỐNG CHĂM SÓC VÒNG ĐỜI KHÁCH HÀNG 24/7
+﻿# QUANNGUYENS — AI AGENT CSKH & HỆ THỐNG CHĂM SÓC VÒNG ĐỜI KHÁCH HÀNG 24/7
 
 **Thương hiệu:** QuanNguyenS · [quannguyens.com](https://quannguyens.com/)  
 **Phong cách:** Pyjama & Loungewear European Casual  
-**Hệ thống:** AI CSKH Tự Động Hóa 24/7 (Trợ lý May) & Omnichannel Action Gateway  
+**Hệ thống:** AI CSKH Tự Động Hóa 24/7 (Trợ lý QuanNguyenS) & Omnichannel Action Gateway  
 **Căn cứ thiết kế:** `QuanNguyenS_AI_CSKH_Master_Blueprint_v2_2026-10-22.md` & Master Build Prompts A & B  
 **Kho lưu trữ mã nguồn:** [https://github.com/QuanNguyenS403/qns_cskh.git](https://github.com/QuanNguyenS403/qns_cskh.git) (nhánh `main`)
 
@@ -69,7 +69,7 @@ D:\CSKH\
 │   │   └── knowledgeBase.js   # RAG lai tiếng Việt (bỏ dấu/đồng nghĩa), evidence_ref
 │   ├── agent\
 │   │   ├── outputSchema.js    # Schema đầu ra theo Phụ lục A (Zod validated)
-│   │   ├── systemPrompt.js    # Xây dựng System Prompt runtime của May (Prompt B)
+│   │   ├── systemPrompt.js    # Xây dựng System Prompt runtime của QuanNguyenS (Prompt B)
 │   │   ├── groundingChecker.js# Kiểm duyệt trước khi gửi (chặn secret leak, bịa giá, injection)
 │   │   └── mayOrchestrator.js # Não bộ điều phối hội thoại, thấu cảm, xử lý teencode
 │   ├── inventory\
@@ -128,7 +128,7 @@ npm start
 ```
 
 ### Danh mục API Endpoints khả dụng:
-- **Tương tác Chat với May:** `POST http://localhost:3002/api/chat`
+- **Tương tác Chat với QuanNguyenS:** `POST http://localhost:3002/api/chat`
 - **Tra cứu Catalog:** `GET http://localhost:3002/api/catalog`
 - **Tính toán Báo giá (Quote):** `POST http://localhost:3002/api/quote`
 - **Chuẩn bị đơn hàng (Prepare Order):** `POST http://localhost:3002/api/orders/prepare`

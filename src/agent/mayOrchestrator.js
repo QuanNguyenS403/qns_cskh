@@ -1,7 +1,7 @@
-/**
- * MAY CSKH ORCHESTRATOR & CONVERSATION CORE (Blueprint §4, §6.3, Prompt B, Phụ lục A, C)
+﻿/**
+ * QUANNGUYENS CSKH ORCHESTRATOR & CONVERSATION CORE (Blueprint §4, §6.3, Prompt B, Phụ lục A, C)
  * 
- * Bộ não điều phối toàn bộ hội thoại của May:
+ * Bộ não điều phối toàn bộ hội thoại của QuanNguyenS:
  * - Tiếp nhận tin nhắn từ các kênh (Web, Messenger, Instagram, Threads, Zalo)
  * - Nạp Context Pack có kiểm soát (Trusted vs Task context)
  * - Tra cứu công cụ: Catalog, Pricing Quote, Knowledge Base, Policy Registry
@@ -34,7 +34,7 @@ export class MayOrchestrator {
    * @param {string} params.senderId ID định danh của khách trên kênh
    * @param {Object} [params.conversationState] Trạng thái phiên hiện tại
    * @param {string} [params.providerMessageId] Mã tin nhắn từ nhà cung cấp webhook
-   * @returns {Object} Standardized May Output Envelope (Phụ lục A)
+   * @returns {Object} Standardized QuanNguyenS Output Envelope (Phụ lục A)
    */
   async processMessage({
     text,
@@ -122,8 +122,8 @@ export class MayOrchestrator {
     // ── 2. XỬ LÝ CÁC CA KIỂM THỬ ĐẶC THÙ & SECURITY (X01–X15) ─────
 
     // X15: Hỏi là người hay bot
-    if (/bạn là người hay bot|người thật hay robot|may là ai|quannguyens là ai|ai đang chat|phải bot không/i.test(rawText)) {
-      customerMessage = 'Dạ mình là May, trợ lý AI tư vấn và chăm sóc khách hàng của thương hiệu QuanNguyenS. Mình luôn có mặt 24/7 để hỗ trợ bạn chọn mẫu, xem giá, tư vấn size và theo dõi đơn hàng ạ.'
+    if (/bạn là người hay bot|người thật hay robot|quannguyens là ai|shop là ai|ai đang chat|phải bot không/i.test(rawText)) {
+      customerMessage = 'Dạ mình là QuanNguyenS, trợ lý AI tư vấn và chăm sóc khách hàng của thương hiệu QuanNguyenS. Mình luôn có mặt 24/7 để hỗ trợ bạn chọn mẫu, xem giá, tư vấn size và theo dõi đơn hàng ạ.'
       intentCodes.push('ask_identity')
       nextStep = 'INFORM'
       return this._finalizeOutput({
@@ -525,7 +525,7 @@ export class MayOrchestrator {
         ConversationStore.saveMessage(this.db, {
           conversationId: this._activeConversation.id,
           senderType: 'BOT',
-          senderId: 'may',
+          senderId: 'quannguyens',
           contentText: sanitized.customer_message,
           payloadJson: sanitized,
           direction: 'OUTBOUND',

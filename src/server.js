@@ -205,7 +205,7 @@ app.post('/api/payment/generate-qr', apiLimiter, (req, res) => {
 
 import { MayOrchestrator } from './agent/mayOrchestrator.js'
 
-// ── MAY AI CSKH INTERACTION API (Blueprint §4, Phase 2) ──────
+// ── QUANNGUYENS AI CSKH INTERACTION API (Blueprint §4, Phase 2) ──────
 app.post('/api/chat', apiLimiter, async (req, res) => {
   try {
     const db = getDb()
@@ -225,7 +225,7 @@ app.post('/api/chat', apiLimiter, async (req, res) => {
 
     return res.json({ success: true, ...response })
   } catch (err) {
-    console.error('Lỗi xử lý chat May:', err)
+    console.error('Lỗi xử lý chat QuanNguyenS:', err)
     return res.status(500).json({ success: false, error: err.message })
   }
 })
@@ -256,27 +256,27 @@ app.post('/api/webhook/meta', webhookLimiter, async (req, res) => {
       }
 
       const orchestrator = new MayOrchestrator(db)
-      const mayResponse = await orchestrator.processMessage({
+      const agentResponse = await orchestrator.processMessage({
         text: inboundMessage.text,
         channel: inboundMessage.channel,
         senderId: inboundMessage.channelSenderId,
         providerMessageId: inboundMessage.messageId,
       })
 
-      if (!mayResponse || !mayResponse.customer_message) {
+      if (!agentResponse || !agentResponse.customer_message) {
         return
       }
 
       // Gửi phản hồi qua adapter tương ứng có can_send bảo vệ
       if (inboundMessage.channel === 'messenger') {
-        await messengerAdapter.sendMessage({ recipientId: inboundMessage.channelSenderId, text: mayResponse.customer_message })
+        await messengerAdapter.sendMessage({ recipientId: inboundMessage.channelSenderId, text: agentResponse.customer_message })
       } else if (inboundMessage.channel === 'instagram') {
-        await instagramAdapter.sendMessage({ recipientId: inboundMessage.channelSenderId, text: mayResponse.customer_message })
+        await instagramAdapter.sendMessage({ recipientId: inboundMessage.channelSenderId, text: agentResponse.customer_message })
       } else if (inboundMessage.channel === 'threads') {
-        await threadsAdapter.replyToPost({ postId: inboundMessage.channelSenderId, text: mayResponse.customer_message })
+        await threadsAdapter.replyToPost({ postId: inboundMessage.channelSenderId, text: agentResponse.customer_message })
       }
     } catch (e) {
-      console.error(`❌ [MAY DISPATCH ERROR ${inboundMessage.channel}]:`, e.message)
+      console.error(`❌ [QUANNGUYENS DISPATCH ERROR ${inboundMessage.channel}]:`, e.message)
     }
   })
 })
@@ -320,17 +320,17 @@ app.post('/api/webhook/zalo', webhookLimiter, async (req, res) => {
     console.log(`📩 [INBOUND ZALO OA] Từ ${inbound.channelSenderId}: "${inbound.text}"`)
     const db = getDb()
     const orchestrator = new MayOrchestrator(db)
-    const mayResponse = await orchestrator.processMessage({
+    const agentResponse = await orchestrator.processMessage({
       text: inbound.text,
       channel: 'zalo',
       senderId: inbound.channelSenderId,
       providerMessageId: inbound.messageId,
     })
 
-    if (mayResponse.customer_message) {
+    if (agentResponse.customer_message) {
       await zaloAdapter.sendTextMessage({
         recipientId: inbound.channelSenderId,
-        text: mayResponse.customer_message,
+        text: agentResponse.customer_message,
       })
     }
 

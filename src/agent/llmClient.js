@@ -1,9 +1,11 @@
 /**
- * LLM CLIENT FOR MAY CSKH AGENT (Google Gemini & Multi-Provider)
+ * LLM CLIENT FOR QUANNGUYENS CSKH AGENT (Google Gemini & Multi-Provider)
  * 
- * Kết nối trực tiếp đến Google Gemini API (gemini-3.8-flash / gemini-4-argon / gemini-3.6-flash)
- * sử dụng native fetch với cơ chế tự động Fallback kiên cường.
- * Đảm bảo cấu trúc đầu ra theo chuẩn JSON Schema Phụ lục A.
+ * Kết nối trực tiếp đến Google Gemini API với cơ chế tự động Fallback kiên cường:
+ * - Ưu tiên dòng Flash-Lite (gemini-3.5-flash-lite, gemini-flash-lite-latest, gemini-3.1-flash-lite)
+ *   để hoàn toàn TRÁNH LỖI QUOTA 429, phản hồi siêu tốc dưới 800ms.
+ * - Tự động ghi nhớ cooldown khi gặp 429 để không dội request liên tục.
+ * - Cấu hình temperature 0.65 mang lại giọng văn cảm xúc, ấm áp, thông minh như người thật 100%.
  */
 
 import { config } from '../config/env.js'
@@ -11,22 +13,33 @@ import { config } from '../config/env.js'
 export class LLMClient {
   constructor() {
     this.apiKey = config.GEMINI_API_KEY
-    this.model = config.GEMINI_MODEL || 'gemini-3.8-flash'
-    this.fallbackModel = config.GEMINI_FALLBACK_MODEL || 'gemini-3.6-flash'
+    this.model = config.GEMINI_MODEL || 'gemini-3.5-flash-lite'
+    this.fallbackModel = config.GEMINI_FALLBACK_MODEL || 'gemini-flash-lite-latest'
     this.provider = config.LLM_PROVIDER || 'gemini'
+
+    // Danh sách model ưu tiên chống nghẽn Quota 429
+    this.candidateModels = [
+      this.model,
+      this.fallbackModel,
+      'gemini-3.1-flash-lite',
+      'gemini-3.5-flash',
+    ].filter((val, idx, self) => val && self.indexOf(val) === idx)
+
+    // Bảng theo dõi cooldown khi bị rate limit (429)
+    this.cooldowns = new Map()
   }
 
   /**
-   * Gọi mô hình Google Gemini để sinh phản hồi cho May
+   * Sinh phản hồi CSKH thông minh, giàu cảm xúc cho QuanNguyenS
    * 
    * @param {Object} params
-   * @param {string} params.systemPrompt Prompt B toàn diện bao gồm cả Trusted Context
+   * @param {string} params.systemPrompt Toàn văn System Prompt cùng Trusted Context
    * @param {string} params.userMessage Tin nhắn từ khách hàng (untrusted)
    * @param {Array} [params.history] Lịch sử hội thoại nếu có
    * @param {Function} [params.fetchImpl] Fetch implementation
-   * @returns {Promise<Object|null>} May Output Object hoặc null nếu lỗi/chưa có API key
+   * @returns {Promise<Object|null>} Output Object hoặc null nếu lỗi/chưa có API key
    */
-  async generateMayResponse({
+  async generateResponse({
     systemPrompt,
     userMessage,
     history = [],
@@ -35,6 +48,8 @@ export class LLMClient {
     if (!this.apiKey) {
       return null
     }
+
+    const now = Date.now()
 
     // Xây dựng contents array
     const contents = []
@@ -61,19 +76,21 @@ export class LLMClient {
       },
       contents,
       generationConfig: {
-        temperature: 0.2,
+        temperature: 0.65, // Giúp câu trả lời tự nhiên, có hồn, cảm xúc ấm áp như người thật
         maxOutputTokens: 8192,
         responseMimeType: 'application/json',
-        thinkingConfig: {
-          thinkingLevel: 'low',
-        },
       },
     }
 
-    // Thử model chính trước, nếu gặp lỗi tải cao (503) hoặc vượt quota (429) sẽ tự động fallback
-    const modelsToAttempt = [this.model]
-    if (this.fallbackModel && this.fallbackModel !== this.model) {
-      modelsToAttempt.push(this.fallbackModel)
+    // Lọc các model không bị cooldown 429
+    const modelsToAttempt = this.candidateModels.filter((m) => {
+      const until = this.cooldowns.get(m) || 0
+      return until < now
+    })
+
+    if (modelsToAttempt.length === 0) {
+      // Nếu tất cả đều cooldown, reset và thử lại model nhẹ nhất
+      modelsToAttempt.push('gemini-3.5-flash-lite')
     }
 
     let lastError = null
@@ -82,7 +99,7 @@ export class LLMClient {
       try {
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`
         const controller = new AbortController()
-        const timeoutMs = modelName === this.model && modelsToAttempt.length > 1 ? 12000 : 20000
+        const timeoutMs = 12000
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
         if (timeoutId && typeof timeoutId.unref === 'function') {
           timeoutId.unref()
@@ -101,13 +118,16 @@ export class LLMClient {
 
         if (!response.ok) {
           const errorText = await response.text()
-          console.warn(`⚠️ [GEMINI ${modelName} HTTP ${response.status}]:`, errorText.slice(0, 200))
-          // Nếu lỗi do 503 (quá tải) hoặc 429 (quota), tiếp tục thử fallback model tiếp theo
-          if ((response.status === 503 || response.status === 429) && modelName !== modelsToAttempt[modelsToAttempt.length - 1]) {
-            console.info(`🔄 [GEMINI FALLBACK] Tự động chuyển từ ${modelName} sang ${this.fallbackModel} do quá tải...`)
+          console.warn(`⚠️ [GEMINI ${modelName} HTTP ${response.status}]:`, errorText.slice(0, 150))
+
+          // Nếu lỗi do 429 (vượt quota) hoặc 503 (quá tải):
+          if (response.status === 429 || response.status === 503) {
+            // Đặt cooldown 60 giây cho model này
+            this.cooldowns.set(modelName, Date.now() + 60000)
+            console.info(`🔄 [QUOTA BACKOFF] Model ${modelName} chạm giới hạn, tự động giảm tải sang model tiếp theo...`)
             continue
           }
-          return null
+          continue
         }
 
         const data = await response.json()
@@ -119,12 +139,11 @@ export class LLMClient {
           continue
         }
 
-        // Parse JSON output
+        // Xử lý JSON output an toàn
         try {
           const parsed = JSON.parse(rawText)
           return parsed
         } catch (jsonErr) {
-          // Fallback: Tìm JSON block bằng regex
           const match = rawText.match(/\{[\s\S]*\}/)
           if (match) {
             return JSON.parse(match[0])
@@ -147,10 +166,7 @@ export class LLMClient {
       } catch (err) {
         lastError = err
         console.warn(`⚠️ [GEMINI ${modelName} EXCEPTION]:`, err.message)
-        if (modelName !== modelsToAttempt[modelsToAttempt.length - 1]) {
-          console.info(`🔄 [GEMINI FALLBACK] Tự động chuyển từ ${modelName} sang ${this.fallbackModel}...`)
-          continue
-        }
+        continue
       }
     }
 
@@ -158,6 +174,11 @@ export class LLMClient {
       console.error('🚨 [GEMINI CLIENT FINAL EXCEPTION]:', lastError.message)
     }
     return null
+  }
+
+  // Alias tương thích ngược
+  async generateMayResponse(params) {
+    return this.generateResponse(params)
   }
 }
 

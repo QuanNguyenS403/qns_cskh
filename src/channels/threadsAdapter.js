@@ -1,4 +1,4 @@
-import { config } from '../config/env.js'
+﻿import { config } from '../config/env.js'
 import { canSendGate } from './canSend.js'
 import { auditLogger } from '../security/auditLogger.js'
 
@@ -86,7 +86,7 @@ export class ThreadsAdapter {
 
       auditLogger.logAction({
         actorType: 'AI_AGENT',
-        actorId: 'may',
+        actorId: 'quannguyens',
         actionName: 'THREADS_REPLY_PUBLISHED',
         targetEntityType: 'thread',
         targetEntityId: replyToThreadId,

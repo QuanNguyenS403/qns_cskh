@@ -1,4 +1,4 @@
-import test from 'node:test'
+﻿import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'fs'
 import path from 'path'
@@ -63,7 +63,7 @@ test('Phase R1 - Inbox Queue & Durable Conversation Storage Integration', async 
     // Tin 2: Bot trả lời
     assert.strictEqual(messages[1].direction, 'OUTBOUND')
     assert.strictEqual(messages[1].sender_type, 'BOT')
-    assert.strictEqual(messages[1].sender_id, 'may')
+    assert.strictEqual(messages[1].sender_id, 'quannguyens')
     assert.strictEqual(messages[1].content_text, res.customer_message)
   })
 
@@ -83,7 +83,7 @@ test('Phase R1 - Inbox Queue & Durable Conversation Storage Integration', async 
       providerMessageId: turn2Mid,
     })
 
-    assert.ok(res2.customer_message.includes('May'))
+    assert.ok(res2.customer_message.includes('QuanNguyenS'))
 
     // Xác nhận không tạo thêm conversation mới
     const allConvs = db.prepare(`SELECT * FROM conversations WHERE channel = ? AND channel_conversation_id = ?`).all(channel, customerId)

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GOOGLE SHEETS LIVE SYNC & POST-DELIVERY CARE SERVICE
  * 
  * Chức năng:
@@ -71,7 +71,7 @@ export function parseCsv(text) {
 
 /**
  * Tạo nội dung tin nhắn chăm sóc khách hàng sau khi nhận hàng thành công
- * Đúng phong cách May: Tinh tế, ấm áp, nhã nhặn, tôn trọng khách hàng.
+ * Đúng phong cách QuanNguyenS: Tinh tế, ấm áp, nhã nhặn, tôn trọng khách hàng.
  */
 export function buildPostDeliveryMessage({ customerName = 'bạn', orderId, itemsSummary = '' }) {
   const greeting = customerName && customerName !== 'bạn' && customerName !== 'Khách hàng'
@@ -116,7 +116,7 @@ export class GoogleSheetsService {
     if (existingJob && existingJob.status === 'COMPLETED') {
       return {
         status: 'DUPLICATE',
-        message: `Đơn hàng ${cleanOrderId} đã được May gửi tin nhắn chăm sóc sau nhận hàng trước đó.`,
+        message: `Đơn hàng ${cleanOrderId} đã được QuanNguyenS gửi tin nhắn chăm sóc sau nhận hàng trước đó.`,
         completed_at: existingJob.updated_at,
       }
     }
@@ -228,7 +228,7 @@ export class GoogleSheetsService {
     // 8. Ghi Audit Log hành động nghiệp vụ
     auditLogger.logAction(db, {
       actorType: 'AI_AGENT',
-      actorId: 'may',
+      actorId: 'quannguyens',
       actionName: 'POST_DELIVERY_CARE_SENT',
       targetEntityType: 'order',
       targetEntityId: cleanOrderId,

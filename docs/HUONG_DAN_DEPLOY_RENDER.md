@@ -1,4 +1,4 @@
-# HƯỚNG DẪN TRIỂN KHAI HỆ THỐNG CSKH LÊN RENDER (FREE PLAN)
+﻿# HƯỚNG DẪN TRIỂN KHAI HỆ THỐNG CSKH LÊN RENDER (FREE PLAN)
 
 Hệ thống AI CSKH 24/7 QuanNguyenS cấu hình cho **Render Free Plan** (miễn phí hoàn toàn), kết hợp cron job để giữ service luôn hoạt động 24/7.
 

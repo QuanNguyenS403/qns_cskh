@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "quannguyens-ai-cskh",
   "version": "1.0.0",
   "description": "QuanNguyenS 24/7 AI CSKH & Multi-Channel Customer Lifecycle System",
@@ -17,7 +17,7 @@
   "keywords": [
     "cskh",
     "ai-agent",
-    "may",
+    
     "quannguyens",
     "ecommerce"
   ],

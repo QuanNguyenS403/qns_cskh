@@ -1,6 +1,6 @@
-# ==============================================================================
+﻿# ==============================================================================
 # RENDER BLUEPRINT SPECIFICATION (render.yaml)
-# HỆ THỐNG AI AGENT CSKH 24/7 (MAY) — QUANNGUYENS.COM
+# HỆ THỐNG AI AGENT CSKH 24/7 — QUANNGUYENS — QUANNGUYENS.COM
 # ==============================================================================
 # Gói: FREE PLAN (miễn phí hoàn toàn)
 # Giữ service không ngủ: Dùng cron-job.org ping /livez mỗi 10 phút (FREE)
@@ -55,9 +55,9 @@ services:
       - key: LLM_PROVIDER
         value: gemini
       - key: GEMINI_MODEL
-        value: gemini-3.8-flash
+        value: gemini-3.5-flash-lite
       - key: GEMINI_FALLBACK_MODEL
-        value: gemini-3.6-flash
+        value: gemini-flash-lite-latest
 
       # ── Meta Platform — API Graph phiên bản cố định ───────────────────────
       - key: META_GRAPH_VERSION
