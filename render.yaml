@@ -15,7 +15,7 @@ services:
     plan: free
     region: singapore
     buildCommand: npm ci && mkdir -p /opt/render/project/src/data
-    startCommand: npm start
+    startCommand: node --experimental-sqlite src/server.js
     healthCheckPath: /livez
 
     envVars:
@@ -28,6 +28,9 @@ services:
         value: Asia/Ho_Chi_Minh
       - key: CURRENCY
         value: VND
+      # node:sqlite là experimental trong Node.js 22.x — cần flag này
+      - key: NODE_OPTIONS
+        value: --experimental-sqlite
 
       # ── Định danh hệ thống ────────────────────────────────────────────────
       - key: DEFAULT_TENANT_ID
