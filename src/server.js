@@ -1,4 +1,4 @@
-import express from 'express'
+﻿import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import crypto from 'node:crypto'
@@ -59,6 +59,11 @@ const apiLimiter = createRateLimiter({ windowMs: 60000, max: 60, message: 'Rate 
 
 // ── Health & Readiness ──────────────────────────────────────
 app.get('/livez', (req, res) => res.json({ status: 'alive', time: new Date().toISOString() }))
+// -- Ping endpoint cho Cron Job giu service khong ngu (Free Plan) -
+// Dung cron-job.org hoac GitHub Actions GET /api/ping moi 10 phut
+app.get('/api/ping', (req, res) => {
+  res.json({ pong: true, uptime: Math.floor(process.uptime()), time: new Date().toISOString() })
+})
 
 app.get('/readyz', (req, res) => {
   try {

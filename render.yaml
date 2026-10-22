@@ -2,6 +2,11 @@
 # RENDER BLUEPRINT SPECIFICATION (render.yaml)
 # HỆ THỐNG AI AGENT CSKH 24/7 (MAY) — QUANNGUYENS.COM
 # ==============================================================================
+# Gói: FREE PLAN (miễn phí hoàn toàn)
+# Giữ service không ngủ: Dùng cron-job.org ping /livez mỗi 10 phút (FREE)
+# Lưu ý: SQLite lưu trên ephemeral disk — dữ liệu tồn tại khi service ĐANG CHẠY,
+#         nhưng sẽ reset nếu Render tự restart/redeploy. Phù hợp cho MVP/demo.
+# ==============================================================================
 
 services:
   - type: web
@@ -9,10 +14,12 @@ services:
     runtime: node
     plan: free
     region: singapore
-    buildCommand: npm install
+    buildCommand: npm ci && mkdir -p /opt/render/project/src/data
     startCommand: npm start
     healthCheckPath: /livez
+
     envVars:
+      # ── Runtime cơ bản ────────────────────────────────────────────────────
       - key: NODE_ENV
         value: production
       - key: PORT
@@ -21,14 +28,19 @@ services:
         value: Asia/Ho_Chi_Minh
       - key: CURRENCY
         value: VND
+
+      # ── Định danh hệ thống ────────────────────────────────────────────────
       - key: DEFAULT_TENANT_ID
         value: quannguyens_corp
       - key: DEFAULT_SHOP_ID
         value: quannguyens_pijama
-      - key: CSKH_DB_PATH
-        value: ./data/cskh.db
 
-      # Tự động sinh khóa ngẫu nhiên an toàn trên Render (Fail-Closed R-01)
+      # ── SQLite Database (ephemeral — tồn tại khi service đang chạy) ──────
+      # Dùng /opt/render/project/src/data/ thay vì ./data/ để tránh lỗi path
+      - key: CSKH_DB_PATH
+        value: /opt/render/project/src/data/cskh.db
+
+      # ── Tự động sinh khóa ngẫu nhiên an toàn trên Render (Fail-Closed R-01) ─
       - key: CSKH_CONFIRMATION_SECRET
         generateValue: true
       - key: CSKH_ADMIN_SECRET
@@ -36,7 +48,7 @@ services:
       - key: CSKH_WEBHOOK_SECRET
         generateValue: true
 
-      # Model AI Gemini thế hệ mới
+      # ── Model AI Gemini thế hệ mới ────────────────────────────────────────
       - key: LLM_PROVIDER
         value: gemini
       - key: GEMINI_MODEL
@@ -44,11 +56,11 @@ services:
       - key: GEMINI_FALLBACK_MODEL
         value: gemini-3.6-flash
 
-      # API Graph phiên bản cố định
+      # ── Meta Platform — API Graph phiên bản cố định ───────────────────────
       - key: META_GRAPH_VERSION
         value: v21.0
 
-      # Thông tin tài khoản nhận tiền thanh toán VietQR
+      # ── Thông tin tài khoản nhận tiền thanh toán VietQR ──────────────────
       - key: VIETQR_BANK_ID
         value: VCB
       - key: VIETQR_BIN
@@ -58,15 +70,16 @@ services:
       - key: VIETQR_ACCOUNT_NAME
         value: NGUYEN DUC QUAN
 
-      # Đồng bộ Google Sheets
+      # ── Google Sheets Đồng bộ ─────────────────────────────────────────────
+      # Tắt auto-poll để tiết kiệm tài nguyên free; dùng webhook thay thế
       - key: GOOGLE_SHEET_RANGE
         value: A1:Z500
       - key: GOOGLE_SHEET_POLL_INTERVAL_MS
-        value: "30000"
+        value: "300000"
       - key: GOOGLE_SHEET_AUTO_SYNC
-        value: "true"
+        value: "false"
 
-      # Tự động hóa chăm sóc vòng đời
+      # ── Tự động hóa chăm sóc vòng đời ────────────────────────────────────
       - key: OUTBOUND_ENABLED
         value: "true"
       - key: QUIET_HOURS_START
@@ -78,13 +91,18 @@ services:
       - key: MARKETING_MAX_30D
         value: "3"
 
-      # Danh sách domain CORS
+      # ── CORS ──────────────────────────────────────────────────────────────
       - key: CORS_ORIGIN
         value: https://quannguyens.com,https://admin.quannguyens.com
 
-      # Các khóa nhạy cảm cần nhập trên Render Dashboard (không lưu plaintext trên Git)
+      # ── Các khóa nhạy cảm: điền thủ công trên Render Dashboard ──────────
+      # (sync: false = không tự đồng bộ từ file, nhập trực tiếp trên Dashboard)
+
+      # Google Gemini AI
       - key: GEMINI_API_KEY
         sync: false
+
+      # Meta Platform (Facebook Page & Messenger)
       - key: META_APP_ID
         sync: false
       - key: META_APP_SECRET
@@ -93,9 +111,46 @@ services:
         sync: false
       - key: META_PAGE_ACCESS_TOKEN
         sync: false
+      - key: META_VERIFY_TOKEN
+        sync: false
+
+      # Instagram Direct Messages
+      - key: INSTAGRAM_ACCOUNT_ID
+        sync: false
+      - key: INSTAGRAM_ACCESS_TOKEN
+        sync: false
+
+      # Threads API
+      - key: THREADS_USER_ID
+        sync: false
+      - key: THREADS_ACCESS_TOKEN
+        sync: false
+
+      # Zalo Official Account
+      - key: ZALO_OA_ID
+        sync: false
+      - key: ZALO_APP_ID
+        sync: false
+      - key: ZALO_SECRET_KEY
+        sync: false
+      - key: ZALO_ACCESS_TOKEN
+        sync: false
+      - key: ZALO_REFRESH_TOKEN
+        sync: false
+
+      # Thanh toán SePay
+      - key: SEPAY_WEBHOOK_API_KEY
+        sync: false
+
+      # Google Sheets & Service Account
       - key: GOOGLE_SHEET_ID
+        sync: false
+      - key: GOOGLE_SHEET_WEBHOOK_SECRET
         sync: false
       - key: GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL
         sync: false
       - key: GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+        sync: false
+      # Hoặc dùng JSON Base64 toàn bộ (ưu tiên khi private key có ký tự đặc biệt):
+      - key: GOOGLE_SERVICE_ACCOUNT_JSON
         sync: false

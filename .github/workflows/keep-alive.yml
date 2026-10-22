@@ -1,0 +1,54 @@
+# ==============================================================================
+# GitHub Actions — Keep-Alive Cron Job cho Render Free Plan
+# Tự động ping /api/ping mỗi 10 phút để service không bị ngủ (spin-down)
+# HOÀN TOÀN MIỄN PHÍ — GitHub Actions cung cấp 2000 phút/tháng cho repo public
+# (repo private: 2000 phút/tháng, cron này chỉ dùng ~44 phút/tháng)
+# ==============================================================================
+name: 🤖 Keep-Alive Ping — Render Free Service
+
+on:
+  schedule:
+    # Ping mỗi 10 phút (*/10 * * * *)
+    # Lưu ý: GitHub Actions có thể delay 1-5 phút ở giờ cao điểm
+    - cron: "*/10 * * * *"
+
+  # Cho phép chạy thủ công từ tab Actions trên GitHub
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Lý do chạy thủ công"
+        required: false
+        default: "Manual keep-alive trigger"
+
+jobs:
+  ping:
+    name: Ping Render Service
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: 🏓 Ping /api/ping
+        run: |
+          echo "⏰ $(date '+%Y-%m-%d %H:%M:%S UTC') — Pinging Render service..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 30 \
+            --retry 2 \
+            --retry-delay 5 \
+            "${{ secrets.RENDER_SERVICE_URL }}/api/ping")
+          
+          echo "📡 HTTP Status: $RESPONSE"
+          
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✅ Service đang hoạt động tốt (HTTP 200)"
+          elif [ "$RESPONSE" = "000" ]; then
+            echo "⚠️ Timeout hoặc không kết nối được — service có thể đang warm up"
+            exit 0
+          else
+            echo "⚠️ HTTP $RESPONSE — kiểm tra logs trên Render Dashboard"
+            exit 0
+          fi
+
+      - name: 🩺 Health Check /livez
+        run: |
+          LIVEZ=$(curl -sf --max-time 15 "${{ secrets.RENDER_SERVICE_URL }}/livez" 2>/dev/null || echo '{"status":"timeout"}')
+          echo "🔍 /livez response: $LIVEZ"
