@@ -10,7 +10,7 @@ import { config } from '../config/env.js'
 export class LLMClient {
   constructor() {
     this.apiKey = config.GEMINI_API_KEY
-    this.model = config.GEMINI_MODEL || 'gemini-2.5-flash'
+    this.model = config.GEMINI_MODEL || 'gemini-3.8-flash'
     this.provider = config.LLM_PROVIDER || 'gemini'
   }
 

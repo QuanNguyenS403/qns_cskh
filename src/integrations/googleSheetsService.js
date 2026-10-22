@@ -194,8 +194,8 @@ export class GoogleSheetsService {
     db.prepare(`
       INSERT INTO outbox (
         id, tenant_id, shop_id, channel, recipient_id, message_type, content_json,
-        idempotency_key, status, eligible_after, expires_at
-      ) VALUES (?, 'quannguyens_corp', 'quannguyens_pijama', ?, ?, 'support', ?, ?, ?, ?, ?)
+        idempotency_key, status, eligible_after, expires_at, created_at, updated_at
+      ) VALUES (?, 'quannguyens_corp', 'quannguyens_pijama', ?, ?, 'support', ?, ?, ?, ?, ?, ?, ?)
     `).run(
       outboxId,
       ch,
@@ -204,7 +204,9 @@ export class GoogleSheetsService {
       `outbox:checkin:${cleanOrderId}`,
       dispatchResult.sent ? 'DELIVERED' : 'PENDING',
       now,
-      new Date(Date.now() + 86400000).toISOString()
+      new Date(Date.now() + 86400000).toISOString(),
+      now,
+      now
     )
 
     // 7. Đánh dấu Job hoàn tất trong bảng jobs (chống trùng vĩnh viễn)
@@ -257,8 +259,13 @@ export class GoogleSheetsService {
     let rows = []
     let fetchMethod = 'CSV Export'
 
+    let targetRange = config.GOOGLE_SHEET_RANGE
+    if (!targetRange || targetRange === 'A1:Z500') {
+      targetRange = 'Đơn Hàng!A1:Z500'
+    }
+
     // 1. Thử lấy dữ liệu trực tiếp bằng Google Service Account API (Bảo mật, hoạt động trên Sheet riêng tư)
-    const saResult = await googleServiceAccount.fetchSheetRows({ sheetId: config.GOOGLE_SHEET_ID })
+    const saResult = await googleServiceAccount.fetchSheetRows({ sheetId: config.GOOGLE_SHEET_ID, range: targetRange })
     if (saResult.success && Array.isArray(saResult.rows)) {
       rows = saResult.rows
       fetchMethod = `Service Account API (${saResult.clientEmail})`
@@ -310,14 +317,16 @@ export class GoogleSheetsService {
     let processedCount = 0
 
     for (const row of rows) {
-      // Tìm các cột tương ứng theo các biến thể tên cột phổ biến
-      const orderId = row['ma don'] || row['ma don hang'] || row['order id'] || row['order_id'] || row['ma'] || ''
-      const status = (row['trang thai'] || row['status'] || row['tinh trang'] || '').toUpperCase()
+      // Tìm các cột tương ứng theo cấu trúc thực tế của Sheet
+      const orderId = row['ma đon'] || row['ma don'] || row['ma don hang'] || row['order id'] || row['order_id'] || row['ma'] || ''
+      const status = (row['trang thai đh'] || row['trang thai dh'] || row['trang thai'] || row['status'] || row['tinh trang'] || '').toUpperCase()
       const customerName = row['ten khach'] || row['ten'] || row['khach hang'] || row['customer'] || row['ho ten'] || 'Khách hàng'
-      const customerPhone = row['sdt'] || row['so dien thoai'] || row['phone'] || ''
-      const items = row['san pham'] || row['items'] || row['don hang'] || row['mon hang'] || ''
-      const channel = (row['kenh'] || row['channel'] || 'messenger').toLowerCase()
+      const customerPhone = row['so đien thoai'] || row['so dien thoai'] || row['sdt'] || row['phone'] || ''
+      const items = (row['ten san pham'] ? (row['ten san pham'] + (row['bien the'] ? ' - ' + row['bien the'] : '')) : '') || row['san pham'] || row['items'] || row['don hang'] || ''
+      const channel = (row['nguon'] || row['kenh'] || row['channel'] || 'messenger').toLowerCase()
       const channelSenderId = row['id kenh'] || row['sender id'] || row['sender_id'] || row['id_khach'] || row['facebook_id'] || ''
+      const trackingCode = row['ma van đon'] || row['ma van don'] || row['tracking'] || ''
+      const carrier = row['đon vi van chuyen'] || row['don vi van chuyen'] || row['carrier'] || 'Viettel Post'
 
       // Kiểm tra xem trạng thái có phải là ĐÃ GIAO / ĐÃ NHẬN thành công không
       const isDelivered = /ĐÃ GIAO|DA GIAO|ĐÃ NHẬN|DA NHAN|GIAO THÀNH CÔNG|GIAO THANH CONG|DELIVERED|THÀNH CÔNG/i.test(status)
@@ -337,6 +346,8 @@ export class GoogleSheetsService {
             items,
             channel,
             channelSenderId,
+            carrier,
+            trackingCode,
             confirmedBy: `google_sheet_poller (${fetchMethod})`,
           })
           processedCount++
