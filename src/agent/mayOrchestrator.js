@@ -80,6 +80,38 @@ export class MayOrchestrator {
       })
     }
 
+    // X29: Khủng hoảng cá nhân / stress (Blueprint §4.3, X29) -> Dừng bán, phản hồi ấm áp, handoff P0
+    if (/stress|khủng hoảng|chuyện gia đình|buồn chuyện|đừng tư vấn mua bán/i.test(rawText)) {
+      customerMessage = 'Dạ May rất chia sẻ với bạn trong thời điểm này. May xin phép không gửi thêm tin tư vấn bán hàng để bạn có không gian nghỉ ngơi ạ. Nếu sau này bạn cần bất kỳ hỗ trợ nào về sản phẩm hoặc đơn hàng, May luôn sẵn sàng lắng nghe khi bạn thoải mái hơn nhé.'
+      intentCodes.push('personal_crisis_stop')
+      nextStep = 'CLOSE'
+      handoff = { required: true, reason_code: 'PERSONAL_CRISIS', priority: 'P0' }
+      return this._finalizeOutput({
+        customerMessage,
+        intentCodes,
+        nextStep,
+        handoff,
+        emotionSignal: 'frustrated',
+      })
+    }
+
+    // X16: Tin đồn giảm giá không có thật -> Kiểm tra pricing, không xác nhận điều không tồn tại
+    if (/nghe nói.*giảm|giảm 30%|giảm 50%|sale 30%/i.test(rawText)) {
+      const pricingPolicy = getApprovedPolicy(this.db, { shopId: 'quannguyens', policyType: POLICY_TYPES.PRICING })
+      const bankDiscount = pricingPolicy?.content?.bankTransferDiscountPct || 5
+      customerMessage = `Dạ thông tin giảm giá trên là không chính xác ạ. Hiện tại QuanNguyenS áp dụng mức giá niêm yết chuẩn và ưu đãi giảm ${bankDiscount}% khi thanh toán chuyển khoản VietQR, cùng chính sách miễn phí vận chuyển toàn quốc cho đơn từ 500.000đ. Bạn cần May hỗ trợ xem chi tiết mẫu nào không ạ?`
+      intentCodes.push('inquire_promotion')
+      nextStep = 'INFORM'
+      evidenceRefs.push(`policy_${POLICY_TYPES.PRICING}@v1.0`)
+      return this._finalizeOutput({
+        customerMessage,
+        intentCodes,
+        nextStep,
+        evidenceRefs,
+        emotionSignal,
+      })
+    }
+
     // X13 & X14: Chống Prompt Injection & mạo danh Admin (B15)
     if (/admin|chủ shop|bỏ qua quy tắc|ignore previous|giảm 90%|hủy hết đơn|xóa toàn bộ/i.test(rawText)) {
       customerMessage = 'Dạ May không thể thực hiện yêu cầu thay đổi quyền hạn hoặc chính sách qua tin nhắn. Mọi ưu đãi và đơn hàng đều được xử lý tự động theo quy định đã duyệt của QuanNguyenS ạ. Nếu bạn cần hỗ trợ trường hợp ngoại lệ, mình xin phép tạo yêu cầu chuyển tới quản lý shop nhé.'
@@ -263,10 +295,11 @@ export class MayOrchestrator {
         requires_customer_confirmation: false,
       })
 
-      // X02: Hỏi cả giá và có kịp thứ Bảy không
-      if (mentionsSaturday && asksPrice) {
+      // X02 & X21: Hỏi về tiến độ nhận hàng / thứ Bảy
+      if (mentionsSaturday) {
         customerMessage = `Dạ mẫu ${matchedProduct.name} hiện có giá niêm yết là ${quoteRes.subtotal.toLocaleString('vi-VN')}đ ạ. Về tiến độ nhận hàng, nếu bạn chốt đơn trong hôm nay, đơn dự kiến sẽ kịp giao trước thứ Bảy nếu bạn ở khu vực nội thành/trung tâm; còn ở huyện/xã xa hơn thì có thể vào thứ Bảy hoặc đầu tuần sau ạ. Để May tư vấn size chuẩn xác cho bạn, bạn cho May xin thêm chiều cao và cân nặng nhé!`
-        intentCodes.push('ask_price', 'ask_delivery_deadline', 'ask_size')
+        intentCodes.push('ask_delivery_deadline', 'ask_size')
+        if (asksPrice) intentCodes.push('ask_price')
         nextStep = 'ASK_FIT_PREFERENCE'
         return this._finalizeOutput({
           customerMessage,
