@@ -17,12 +17,12 @@ test('Phase 0 - Database Migrations: Reversible Up and Down', (t) => {
   // 1. Chạy Migration Up
   runMigrations(db)
 
-  // Kiểm tra 17 bảng cốt lõi đã tồn tại
+  // Kiểm tra 18 bảng cốt lõi đã tồn tại
   const expectedTables = [
     'orders', 'payments', 'shipments', 'cases', 'promises',
     'consents', 'preferences', 'memory_facts', 'events', 'outbox',
     'jobs', 'action_audits', 'policy_versions', 'quotes', 'reservations',
-    'conversations', 'messages', '_migrations'
+    'conversations', 'messages', 'policy_snapshots', '_migrations'
   ]
 
   const existingTables = db.prepare(`

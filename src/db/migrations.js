@@ -371,6 +371,31 @@ export const MIGRATIONS = [
       `)
     },
   },
+  {
+    version: 2,
+    name: '002_policy_snapshots_and_knowledge',
+    up(db) {
+      db.exec(`
+        -- Bảng policy_snapshots: Đóng băng điều khoản chính sách tại thời điểm phát sinh đơn/báo giá (T42)
+        CREATE TABLE IF NOT EXISTS policy_snapshots (
+          id TEXT PRIMARY KEY,
+          tenant_id TEXT NOT NULL,
+          shop_id TEXT NOT NULL,
+          order_id TEXT,
+          quote_id TEXT,
+          snapshot_json TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_snapshots_order ON policy_snapshots(order_id);
+        CREATE INDEX IF NOT EXISTS idx_snapshots_quote ON policy_snapshots(quote_id);
+      `)
+    },
+    down(db) {
+      db.exec(`
+        DROP TABLE IF EXISTS policy_snapshots;
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db) {

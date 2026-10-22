@@ -47,6 +47,65 @@ app.get('/api/health', (req, res) => {
   })
 })
 
+import { PricingService } from './pricing/pricingService.js'
+import { CATALOG, getProductBySkuOrSlug, searchCatalog } from './catalog/products.js'
+import { seedDefaultPolicies, getAllApprovedPolicies } from './policies/policyRegistry.js'
+
+// ── CATALOG & PRICING API (Blueprint §8, §9) ─────────────────
+app.get('/api/catalog', (req, res) => {
+  const { keyword, maxPrice, size } = req.query
+  const results = searchCatalog({
+    keyword: keyword || null,
+    maxPrice: maxPrice ? parseInt(maxPrice, 10) : null,
+    size: size || null,
+  })
+  return res.json({ success: true, count: results.length, products: results })
+})
+
+app.get('/api/catalog/:sku', (req, res) => {
+  const product = getProductBySkuOrSlug(req.params.sku)
+  if (!product) {
+    return res.status(404).json({ success: false, error: 'Product not found' })
+  }
+  return res.json({ success: true, product })
+})
+
+app.post('/api/quote', (req, res) => {
+  try {
+    const db = getDb()
+    const { items, paymentMethod, shippingProvince, promoCode } = req.body || {}
+    const quoteEnvelope = PricingService.calculateQuote(db, {
+      items,
+      paymentMethod,
+      shippingProvince,
+      promoCode,
+    })
+
+    if (quoteEnvelope.status === 'REJECTED') {
+      return res.status(400).json({ success: false, ...quoteEnvelope })
+    }
+
+    return res.json({ success: true, ...quoteEnvelope })
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.get('/api/quote/:quoteId', (req, res) => {
+  const db = getDb()
+  const result = PricingService.getQuote(db, req.params.quoteId)
+  if (!result || result.status === 'REJECTED') {
+    return res.status(404).json({ success: false, ...result })
+  }
+  return res.json({ success: true, ...result })
+})
+
+app.get('/api/policies', (req, res) => {
+  const db = getDb()
+  const policies = getAllApprovedPolicies(db, 'quannguyens')
+  return res.json({ success: true, policies })
+})
+
 // ── META PLATFORM WEBHOOK (Messenger, Instagram, Threads) ────
 app.get('/api/webhook/meta', handleMetaWebhookGet)
 app.post('/api/webhook/meta', webhookLimiter, async (req, res) => {
@@ -112,11 +171,12 @@ app.post('/api/admin/killswitch', (req, res) => {
   return res.json({ success: true, status: killSwitch.getStatus() })
 })
 
-// Khởi tạo Database Migration khi khởi chạy
+// Khởi tạo Database Migration và Dữ liệu Chính sách mặc định khi khởi chạy
 try {
   const db = getDb()
   runMigrations(db)
-  console.log('✅ [CSKH DB] Cơ sở dữ liệu và Migration đã sẵn sàng.')
+  seedDefaultPolicies(db, 'quannguyens', true)
+  console.log('✅ [CSKH DB] Cơ sở dữ liệu, Migration & Chính sách đã sẵn sàng.')
 } catch (e) {
   console.error('❌ [CSKH DB ERROR]:', e.message)
 }
