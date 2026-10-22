@@ -1,0 +1,10 @@
+node_modules/
+*.log
+.system_generated/
+data/*.db*
+!data/.gitkeep
+.env
+.env.local
+coverage/
+dist/
+tmp/
