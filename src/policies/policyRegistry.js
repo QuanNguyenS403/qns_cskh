@@ -108,7 +108,7 @@ export function getApprovedPolicy(db, { shopId = 'quannguyens', policyType }) {
   const row = db.prepare(`
     SELECT * FROM policy_versions
     WHERE shop_id = ? AND policy_type = ? AND status = 'APPROVED' AND effective_date <= ?
-    ORDER BY effective_date DESC, created_at DESC
+    ORDER BY effective_date DESC, created_at DESC, version DESC, id DESC
     LIMIT 1
   `).get(shopId, policyType, now)
 
