@@ -48,27 +48,37 @@ export class AuditLogger {
     return this._db || getDb()
   }
 
-  logAction({
-    operationId = null,
-    tenantId = config.DEFAULT_TENANT_ID,
-    shopId = config.DEFAULT_SHOP_ID,
-    actorType = 'AI_AGENT', // AI_AGENT | HUMAN_ADMIN | SYSTEM_JOB | CUSTOMER
-    actorId = 'may',
-    actionName,
-    targetEntityType,
-    targetEntityId,
-    inputPayload = null,
-    resultStatus, // SUCCEEDED | REJECTED | FAILED | UNKNOWN
-    resultEnvelope = null,
-    evidenceRef = null,
-  }) {
+  logAction(dbOrOptions, maybeOptions = null) {
+    let activeDb = this.db
+    let opts = dbOrOptions || {}
+
+    if (maybeOptions && typeof dbOrOptions?.prepare === 'function') {
+      activeDb = dbOrOptions
+      opts = maybeOptions
+    }
+
+    const {
+      operationId = null,
+      tenantId = config.DEFAULT_TENANT_ID,
+      shopId = config.DEFAULT_SHOP_ID,
+      actorType = 'AI_AGENT', // AI_AGENT | HUMAN_ADMIN | SYSTEM_JOB | CUSTOMER
+      actorId = 'may',
+      actionName,
+      targetEntityType,
+      targetEntityId,
+      inputPayload = null,
+      resultStatus, // SUCCEEDED | REJECTED | FAILED | UNKNOWN
+      resultEnvelope = null,
+      evidenceRef = null,
+    } = opts
+
     const opId = operationId || `op_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`
     const redactedInput = inputPayload ? JSON.stringify(redactSensitiveData(inputPayload)) : null
     const redactedResult = resultEnvelope ? JSON.stringify(redactSensitiveData(resultEnvelope)) : null
     const now = new Date().toISOString()
 
     try {
-      this.db.prepare(`
+      activeDb.prepare(`
         INSERT INTO action_audits (
           id, operation_id, tenant_id, shop_id, actor_type, actor_id,
           action_name, target_entity_type, target_entity_id,

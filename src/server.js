@@ -106,6 +106,64 @@ app.get('/api/policies', (req, res) => {
   return res.json({ success: true, policies })
 })
 
+import { OrderService } from './orders/orderService.js'
+
+// ── ORDERS & TRANSACTIONAL API (Blueprint §10, §11, §12) ─────
+app.post('/api/orders/prepare', apiLimiter, (req, res) => {
+  try {
+    const db = getDb()
+    const result = OrderService.prepareOrder(db, req.body || {})
+    if (result.status === 'REJECTED') {
+      return res.status(400).json({ success: false, ...result })
+    }
+    return res.json({ success: true, ...result })
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.post('/api/orders/commit', apiLimiter, (req, res) => {
+  try {
+    const db = getDb()
+    const result = OrderService.commitOrder(db, req.body || {})
+    if (result.status === 'REJECTED') {
+      return res.status(400).json({ success: false, ...result })
+    }
+    return res.json({ success: true, ...result })
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.get('/api/orders/status', apiLimiter, (req, res) => {
+  try {
+    const db = getDb()
+    const { orderId, phone } = req.query
+    const result = OrderService.getOrder(db, { orderId, customerPhone: phone })
+    if (result.status === 'REJECTED') {
+      const statusCode = result.error_code === 'FORBIDDEN_OBJECT_ACCESS' ? 403 : 400
+      return res.status(statusCode).json({ success: false, ...result })
+    }
+    return res.json({ success: true, ...result })
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.post('/api/payment/generate-qr', apiLimiter, (req, res) => {
+  try {
+    const db = getDb()
+    const { orderId } = req.body || {}
+    const result = OrderService.createPaymentRequest(db, { orderId })
+    if (result.status === 'REJECTED') {
+      return res.status(400).json({ success: false, ...result })
+    }
+    return res.json({ success: true, ...result })
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
 import { MayOrchestrator } from './agent/mayOrchestrator.js'
 
 // ── MAY AI CSKH INTERACTION API (Blueprint §4, Phase 2) ──────
@@ -186,7 +244,24 @@ app.post('/api/webhook/sepay', webhookLimiter, async (req, res) => {
       return res.json({ success: true, message: 'Giao dịch đã được ghi nhận trước đó (Idempotent)' })
     }
 
-    return res.json({ success: true, message: 'Đã tiếp nhận giao dịch an toàn', eventId: txId })
+    // Đối soát tự động với đơn hàng nếu có mã đơn trong nội dung chuyển khoản
+    const content = String(payload.content || payload.description || '')
+    const orderMatch = content.match(/QNS[- ]?[A-Z0-9]{6}[- ]?[A-Z0-9]{4}/i)
+    let orderId = payload.orderId || null
+    if (!orderId && orderMatch) {
+      orderId = orderMatch[0].replace(/\s+/g, '-').toUpperCase()
+    }
+
+    const db = getDb()
+    const reconcileRes = OrderService.reconcilePayment(db, {
+      orderId,
+      gateway: 'sepay',
+      transactionId: txId,
+      amount: payload.amountIn || payload.transferAmount || payload.amount || 0,
+      rawPayload: payload,
+    })
+
+    return res.json({ success: true, message: 'Đã tiếp nhận và đối soát giao dịch', eventId: txId, reconcile: reconcileRes })
   } catch (err) {
     console.error('SePay webhook error:', err)
     return res.status(500).json({ success: false, error: err.message })
