@@ -11,7 +11,8 @@ export const CATALOG = [
     sku: 'QNS-DAYBREAK-SET',
     id: 'the-classic-set',
     slug: 'the-classic-set',
-    name: 'THE DAYBREAK SET',
+    name: 'The Classic Set (Daybreak)',
+    websiteName: 'The Classic Set',
     subtitle: 'Pijama Phong Cách Châu Âu · Sọc Hồng Nắng Sớm',
     collection: 'Thu Đông 2026',
     price: 390000,
@@ -19,10 +20,12 @@ export const CATALOG = [
     currency: 'VND',
     badge: 'MỚI RA MẮT',
     
-    // Thuộc tính vật lý chuẩn hóa
+    // Thuộc tính vật lý chuẩn hóa (D2: Các chứng chỉ/thông số chưa kiểm chứng = null)
     composition: '100% Sợi Tự Nhiên Cao Cấp (Natural Plant-Based Cotton-Modal Blend)',
     fabricOrigin: null, // CHƯA XÁC MINH = null, không bịa xuất xứ châu Âu
-    fabricDetail: 'Định lượng 165 GSM · Dệt thoi vân chéo thoáng khí 4 mùa · Tiêu chuẩn OEKO-TEX Standard 100',
+    fabricDetail: 'Dệt thoi vân chéo thoáng khí 4 mùa · Thoáng mát mềm mại',
+    gsm: null,
+    oekoTex: null,
     thicknessRating: 'medium', // thin | medium | thick
     sheernessRating: 'opaque', // opaque (kín) | slightly_sheer | sheer
     stretch: 'none', // none (không co giãn) | mechanical | 2-way | 4-way
@@ -74,7 +77,8 @@ export const CATALOG = [
     sku: 'QNS-STILLWATER-SET',
     id: 'the-cafe-look',
     slug: 'the-cafe-look',
-    name: 'THE STILLWATER SET',
+    name: 'The Café Look (Stillwater)',
+    websiteName: 'The Café Look',
     subtitle: 'Pijama Phong Cách Châu Âu · Caro Navy Cổ Điển',
     collection: 'Thu Đông 2026',
     price: 550000,
@@ -84,7 +88,9 @@ export const CATALOG = [
     
     composition: '100% Sợi Tự Nhiên Cao Cấp (Modal & Tencel Blend)',
     fabricOrigin: null,
-    fabricDetail: 'Định lượng 175 GSM · Dệt mịn bề mặt óng nhẹ tự nhiên · Mát mịn thân thiện da',
+    fabricDetail: 'Dệt mịn bề mặt óng nhẹ tự nhiên · Mát mịn thân thiện da',
+    gsm: null,
+    oekoTex: null,
     thicknessRating: 'medium',
     sheernessRating: 'opaque',
     stretch: 'mechanical',
@@ -132,7 +138,8 @@ export const CATALOG = [
     sku: 'QNS-HEARTH-SET',
     id: 'the-evening-edit',
     slug: 'the-evening-edit',
-    name: 'THE HEARTH SET',
+    name: 'The Evening Edit (Hearth)',
+    websiteName: 'The Evening Edit',
     subtitle: 'Pijama Phong Cách Châu Âu · Sọc Nâu Ấm Áp',
     collection: 'Thu Đông 2026',
     price: 750000,
@@ -142,7 +149,9 @@ export const CATALOG = [
     
     composition: '100% Sợi Tự Nhiên Cao Cấp (Modal & Cotton chải kỹ cao cấp)',
     fabricOrigin: null,
-    fabricDetail: 'Định lượng 190 GSM · Giữ ấm tốt vào mùa thu đông, bề mặt đầm tay êm ái',
+    fabricDetail: 'Dệt đầm tay êm ái, giữ nhiệt tốt cho tiết trời se lạnh hoặc phòng điều hòa',
+    gsm: null,
+    oekoTex: null,
     thicknessRating: 'thick',
     sheernessRating: 'opaque',
     stretch: 'mechanical',
@@ -195,7 +204,8 @@ export function getProductBySkuOrSlug(query) {
       p.sku.toLowerCase() === q ||
       p.id.toLowerCase() === q ||
       p.slug.toLowerCase() === q ||
-      p.name.toLowerCase().includes(q)
+      p.name.toLowerCase().includes(q) ||
+      (p.websiteName && p.websiteName.toLowerCase().includes(q))
   ) || null
 }
 
