@@ -1,0 +1,101 @@
+# ==============================================================================
+# RENDER BLUEPRINT SPECIFICATION (render.yaml)
+# HỆ THỐNG AI AGENT CSKH 24/7 (MAY) — QUANNGUYENS.COM
+# ==============================================================================
+
+services:
+  - type: web
+    name: quannguyens-ai-cskh
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /livez
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: TIMEZONE
+        value: Asia/Ho_Chi_Minh
+      - key: CURRENCY
+        value: VND
+      - key: DEFAULT_TENANT_ID
+        value: quannguyens_corp
+      - key: DEFAULT_SHOP_ID
+        value: quannguyens_pijama
+      - key: CSKH_DB_PATH
+        value: ./data/cskh.db
+
+      # Tự động sinh khóa ngẫu nhiên an toàn trên Render (Fail-Closed R-01)
+      - key: CSKH_CONFIRMATION_SECRET
+        generateValue: true
+      - key: CSKH_ADMIN_SECRET
+        generateValue: true
+      - key: CSKH_WEBHOOK_SECRET
+        generateValue: true
+
+      # Model AI Gemini thế hệ mới
+      - key: LLM_PROVIDER
+        value: gemini
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: GEMINI_FALLBACK_MODEL
+        value: gemini-3.6-flash
+
+      # API Graph phiên bản cố định
+      - key: META_GRAPH_VERSION
+        value: v21.0
+
+      # Thông tin tài khoản nhận tiền thanh toán VietQR
+      - key: VIETQR_BANK_ID
+        value: VCB
+      - key: VIETQR_BIN
+        value: "970436"
+      - key: VIETQR_ACCOUNT_NO
+        value: "1050773506"
+      - key: VIETQR_ACCOUNT_NAME
+        value: NGUYEN DUC QUAN
+
+      # Đồng bộ Google Sheets
+      - key: GOOGLE_SHEET_RANGE
+        value: A1:Z500
+      - key: GOOGLE_SHEET_POLL_INTERVAL_MS
+        value: "30000"
+      - key: GOOGLE_SHEET_AUTO_SYNC
+        value: "true"
+
+      # Tự động hóa chăm sóc vòng đời
+      - key: OUTBOUND_ENABLED
+        value: "true"
+      - key: QUIET_HOURS_START
+        value: "20:00"
+      - key: QUIET_HOURS_END
+        value: "09:00"
+      - key: MARKETING_MAX_7D
+        value: "1"
+      - key: MARKETING_MAX_30D
+        value: "3"
+
+      # Danh sách domain CORS
+      - key: CORS_ORIGIN
+        value: https://quannguyens.com,https://admin.quannguyens.com
+
+      # Các khóa nhạy cảm cần nhập trên Render Dashboard (không lưu plaintext trên Git)
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: META_APP_ID
+        sync: false
+      - key: META_APP_SECRET
+        sync: false
+      - key: META_PAGE_ID
+        sync: false
+      - key: META_PAGE_ACCESS_TOKEN
+        sync: false
+      - key: GOOGLE_SHEET_ID
+        sync: false
+      - key: GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL
+        sync: false
+      - key: GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+        sync: false

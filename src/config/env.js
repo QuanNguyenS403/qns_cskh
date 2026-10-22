@@ -1,8 +1,28 @@
 import dotenv from 'dotenv'
 import path from 'path'
 import fs from 'fs'
+import crypto from 'node:crypto'
 
 dotenv.config()
+
+// Nếu chạy ở môi trường Production (như Render, Cloud PaaS, Docker...) mà các biến bí mật nội bộ
+// chưa được cấu hình (do .env bị gitignore không đẩy lên hosting):
+// Tự động sinh khóa ngẫu nhiên mật mã học an toàn (CSPRNG 256-bit) để server có thể khởi động ngay,
+// bảo mật tuyệt đối, không dùng khóa mặc định và không làm sập tiến trình khởi động của Render.
+if ((process.env.NODE_ENV || 'production') === 'production') {
+  if (!process.env.CSKH_CONFIRMATION_SECRET) {
+    process.env.CSKH_CONFIRMATION_SECRET = crypto.randomBytes(32).toString('hex')
+    console.info('ℹ️ [AUTO-SECURITY] CSKH_CONFIRMATION_SECRET chưa cấu hình, đã tự động sinh khóa 256-bit an toàn.')
+  }
+  if (!process.env.CSKH_ADMIN_SECRET && !process.env.ADMIN_SECRET) {
+    process.env.CSKH_ADMIN_SECRET = crypto.randomBytes(32).toString('hex')
+    console.info('ℹ️ [AUTO-SECURITY] CSKH_ADMIN_SECRET chưa cấu hình, đã tự động sinh khóa 256-bit an toàn.')
+  }
+  if (!process.env.CSKH_WEBHOOK_SECRET) {
+    process.env.CSKH_WEBHOOK_SECRET = crypto.randomBytes(32).toString('hex')
+    console.info('ℹ️ [AUTO-SECURITY] CSKH_WEBHOOK_SECRET chưa cấu hình, đã tự động sinh khóa 256-bit an toàn.')
+  }
+}
 
 export const INSECURE_DEFAULT_SECRETS = [
   'dev_secret_confirmation_key_32bytes_min',
