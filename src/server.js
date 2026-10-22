@@ -10,6 +10,7 @@ import { messengerAdapter } from './channels/messengerAdapter.js'
 import { instagramAdapter } from './channels/instagramAdapter.js'
 import { threadsAdapter } from './channels/threadsAdapter.js'
 import { zaloAdapter } from './channels/zaloAdapter.js'
+import { GoogleSheetsService } from './integrations/googleSheetsService.js'
 import { eventGateway } from './events/eventGateway.js'
 import { createRateLimiter } from './security/rateLimiter.js'
 
@@ -307,6 +308,51 @@ app.post('/api/webhook/sepay', webhookLimiter, async (req, res) => {
   }
 })
 
+// ── GOOGLE SHEETS LIVE ORDER CONFIRMATION WEBHOOK ────────────
+app.post('/api/webhook/google-sheets', webhookLimiter, async (req, res) => {
+  try {
+    const {
+      secret,
+      orderId,
+      customerName,
+      customerPhone,
+      items,
+      channel = 'messenger',
+      channelSenderId,
+      carrier = 'Viettel Post',
+      trackingCode,
+      confirmedBy = 'Chủ shop (Google Sheet)',
+    } = req.body || {}
+
+    // Xác thực secret nếu đã cấu hình
+    if (config.GOOGLE_SHEET_WEBHOOK_SECRET && secret && secret !== config.GOOGLE_SHEET_WEBHOOK_SECRET) {
+      return res.status(401).json({ success: false, error: 'Unauthorized: Sai Google Sheet Webhook Secret' })
+    }
+
+    if (!orderId) {
+      return res.status(400).json({ success: false, error: 'Thiếu mã đơn hàng (orderId)' })
+    }
+
+    const db = getDb()
+    const result = await GoogleSheetsService.handleDeliveryConfirmation(db, {
+      orderId,
+      customerName,
+      customerPhone,
+      items,
+      channel,
+      channelSenderId,
+      carrier,
+      trackingCode,
+      confirmedBy,
+    })
+
+    return res.json({ success: true, ...result })
+  } catch (err) {
+    console.error('❌ [GOOGLE SHEETS WEBHOOK ERROR]:', err.message)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
 // ── ADMIN KILL SWITCH CONTROL ────────────────────────────────
 app.get('/api/admin/killswitch', (req, res) => {
   return res.json(killSwitch.getStatus())
@@ -336,6 +382,7 @@ try {
   const db = getDb()
   runMigrations(db)
   seedDefaultPolicies(db, 'quannguyens', true)
+  GoogleSheetsService.startPoller(db)
   console.log('✅ [CSKH DB] Cơ sở dữ liệu, Migration & Chính sách đã sẵn sàng.')
 } catch (e) {
   console.error('❌ [CSKH DB ERROR]:', e.message)
@@ -350,14 +397,15 @@ if (isMain) {
   app.listen(config.PORT, '0.0.0.0', () => {
     console.log(`\n======================================================`)
     console.log(`🤖 QUANNGUYENS AI CSKH (MAY) PRODUCTION GATEWAY`)
-    console.log(`   Base URL:     http://localhost:${config.PORT}`)
-    console.log(`   Health Check: http://localhost:${config.PORT}/api/health`)
-    console.log(`   Chat API:     http://localhost:${config.PORT}/api/chat`)
-    console.log(`   Meta Webhook: http://localhost:${config.PORT}/api/webhook/meta`)
-    console.log(`   Zalo Webhook: http://localhost:${config.PORT}/api/webhook/zalo`)
-    console.log(`   SePay Webhook:http://localhost:${config.PORT}/api/webhook/sepay`)
-    console.log(`   Environment:  ${config.NODE_ENV.toUpperCase()}`)
-    console.log(`   Outbound:     ${config.OUTBOUND_ENABLED ? 'ENABLED (24/7 Automation)' : 'STANDBY'}`)
+    console.log(`   Base URL:       http://localhost:${config.PORT}`)
+    console.log(`   Health Check:   http://localhost:${config.PORT}/api/health`)
+    console.log(`   Chat API:       http://localhost:${config.PORT}/api/chat`)
+    console.log(`   Meta Webhook:   http://localhost:${config.PORT}/api/webhook/meta`)
+    console.log(`   Zalo Webhook:   http://localhost:${config.PORT}/api/webhook/zalo`)
+    console.log(`   Sheets Webhook: http://localhost:${config.PORT}/api/webhook/google-sheets`)
+    console.log(`   SePay Webhook:  http://localhost:${config.PORT}/api/webhook/sepay`)
+    console.log(`   Environment:    ${config.NODE_ENV.toUpperCase()}`)
+    console.log(`   Outbound:       ${config.OUTBOUND_ENABLED ? 'ENABLED (24/7 Automation)' : 'STANDBY'}`)
     console.log(`======================================================\n`)
   })
 }

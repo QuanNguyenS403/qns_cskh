@@ -342,15 +342,15 @@ export class OrderService {
       }
     }
 
-    // Lấy thông tin tài khoản ngân hàng từ Secret Config (B09)
-    const bankId = process.env.VIETQR_BANK_ID || 'MBBank'
-    const accountNo = process.env.VIETQR_ACCOUNT_NO || '0988888888'
-    const accountName = process.env.VIETQR_ACCOUNT_NAME || 'QUAN NGUYEN S'
+    // Lấy thông tin tài khoản ngân hàng Vietcombank từ Secret Config (B09)
+    const bankId = process.env.VIETQR_BANK_ID || 'VCB'
+    const accountNo = process.env.VIETQR_ACCOUNT_NO || '1050773506'
+    const accountName = process.env.VIETQR_ACCOUNT_NAME || 'NGUYEN DUC QUAN'
     const cleanCode = row.order_id.replace(/[^A-Z0-9]/g, '').slice(-8)
     const transferContent = `QNS ${cleanCode}`
     const amount = row.total
 
-    // Tạo link ảnh VietQR chuẩn
+    // Tạo link ảnh VietQR chuẩn (Hoàn toàn Free vô thời hạn từ VietQR API)
     const qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact.png?amount=${amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(accountName)}`
 
     return {

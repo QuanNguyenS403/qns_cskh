@@ -59,12 +59,35 @@ export const KNOWLEDGE_DOCS = [
     version: 'v1.0',
     category: 'brand',
     title: 'Thương hiệu QuanNguyenS & Định vị Pijama Châu Âu',
-    tags: ['thuong hieu', 'quannguyens', 'chau au', 'phong cach', 'xuat xu'],
+    tags: ['thuong hieu', 'quannguyens', 'chau au', 'phong cach', 'xuat xu', 'website', 'facebook', 'instagram', 'tiktok'],
     content: `
       QuanNguyenS (quannguyens.com) là thương hiệu thời trang mặc nhà cao cấp, theo đuổi phong cách tối giản thanh lịch châu Âu (European Minimalist Sleepwear & Loungewear).
-      Sứ mệnh: Mang lại cảm giác thoải mái trọn vẹn và tự tin ngay tại không gian riêng tư.
+      Đại diện thương hiệu / Sáng lập: NGUYEN DUC QUAN.
+      Các kênh truyền thông chính thức:
+      - Website: https://quannguyens.com
+      - Fanpage Facebook: https://facebook.com/qns.style
+      - Instagram: https://instagram.com/qns.style
+      - TikTok: https://www.tiktok.com/@qns.style?lang=vi-VN
       Sản phẩm tập trung vào phom dáng suông rộng thanh lịch, gam màu nền nã cổ điển, đường may tinh tế và chất liệu sợi tự nhiên.
       Lưu ý minh bạch: Sản phẩm lấy cảm hứng từ phong cách thiết kế Châu Âu, sản xuất tại xưởng may Việt Nam đạt chuẩn hoàn thiện cao cấp.
+    `.trim(),
+  },
+
+  // 1.1. Tài khoản ngân hàng chính thức & Ưu đãi VietQR
+  {
+    doc_id: 'payment_banking_vietcombank',
+    version: 'v1.0',
+    category: 'payment',
+    title: 'Tài khoản ngân hàng thanh toán Vietcombank & Ưu đãi VietQR',
+    tags: ['ngan hang', 'stk', 'vietcombank', 'vcb', 'chuyen khoan', 'vietqr', 'giam 5%', 'nguyen duc quan'],
+    content: `
+      Thông tin tài khoản ngân hàng chính thức duy nhất của QuanNguyenS:
+      - Ngân hàng: Vietcombank (Ngân hàng TMCP Ngoại thương Việt Nam - VCB)
+      - Số tài khoản: 1050773506
+      - Mã định danh ngân hàng (BIN): 970436
+      - Tên chủ tài khoản: NGUYEN DUC QUAN
+      - Chính sách ưu đãi đặc quyền: Khách hàng thanh toán chuyển khoản VietQR được giảm ngay 5% trực tiếp trên tổng giá trị sản phẩm và được miễn phí vận chuyển toàn quốc cho đơn hàng từ 500.000đ (sau chiết khấu).
+      - Mỗi đơn hàng được hệ thống tạo sẵn mã QR động có số tiền và nội dung chuyển khoản tự động chính xác để khách quét tiện lợi nhất.
     `.trim(),
   },
 

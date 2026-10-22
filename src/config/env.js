@@ -22,6 +22,7 @@ export const config = {
   SHOP_API_BASE_URL: process.env.SHOP_API_BASE_URL || 'http://localhost:3001',
   SHOP_API_TOKEN: process.env.SHOP_API_TOKEN || '',
 
+  // Trí tuệ nhân tạo Google Gemini (Gói Free Tier không thời hạn)
   LLM_PROVIDER: process.env.LLM_PROVIDER || 'gemini',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
@@ -50,13 +51,27 @@ export const config = {
   ZALO_ACCESS_TOKEN: process.env.ZALO_ACCESS_TOKEN || '',
   ZALO_REFRESH_TOKEN: process.env.ZALO_REFRESH_TOKEN || '',
 
-  // Thanh toán VietQR & SePay Webhook
-  SEPAY_WEBHOOK_API_KEY: process.env.SEPAY_WEBHOOK_API_KEY || '',
-  VIETQR_BANK_ID: process.env.VIETQR_BANK_ID || 'MBBank',
-  VIETQR_ACCOUNT_NO: process.env.VIETQR_ACCOUNT_NO || '',
-  VIETQR_ACCOUNT_NAME: process.env.VIETQR_ACCOUNT_NAME || 'QUAN NGUYEN S',
+  // Kênh truyền thông thương hiệu chính thức
+  BRAND_WEBSITE: process.env.BRAND_WEBSITE || 'https://quannguyens.com',
+  BRAND_FACEBOOK: process.env.BRAND_FACEBOOK || 'https://facebook.com/qns.style',
+  BRAND_INSTAGRAM: process.env.BRAND_INSTAGRAM || 'https://instagram.com/qns.style',
+  BRAND_TIKTOK: process.env.BRAND_TIKTOK || 'https://www.tiktok.com/@qns.style?lang=vi-VN',
 
-  // Outbound & Scheduler Controls
+  // Tài khoản thanh toán Vietcombank & VietQR QuickLink (100% Free trọn đời)
+  SEPAY_WEBHOOK_API_KEY: process.env.SEPAY_WEBHOOK_API_KEY || '',
+  VIETQR_BANK_ID: process.env.VIETQR_BANK_ID || 'VCB',
+  VIETQR_BIN: process.env.VIETQR_BIN || '970436',
+  VIETQR_ACCOUNT_NO: process.env.VIETQR_ACCOUNT_NO || '1050773506',
+  VIETQR_ACCOUNT_NAME: process.env.VIETQR_ACCOUNT_NAME || 'NGUYEN DUC QUAN',
+
+  // Google Sheets Đồng bộ theo dõi đơn hàng (100% Free trọn đời)
+  GOOGLE_SHEET_ID: process.env.GOOGLE_SHEET_ID || '',
+  GOOGLE_SHEET_CSV_URL: process.env.GOOGLE_SHEET_CSV_URL || '',
+  GOOGLE_SHEET_WEBHOOK_SECRET: process.env.GOOGLE_SHEET_WEBHOOK_SECRET || 'quannguyens_sheets_secret_2026',
+  GOOGLE_SHEET_POLL_INTERVAL_MS: parseInt(process.env.GOOGLE_SHEET_POLL_INTERVAL_MS || '30000', 10),
+  GOOGLE_SHEET_AUTO_SYNC: process.env.GOOGLE_SHEET_AUTO_SYNC === 'true',
+
+  // Tự động hóa chăm sóc vòng đời & Giờ yên tĩnh
   OUTBOUND_ENABLED: process.env.OUTBOUND_ENABLED === 'true',
   QUIET_HOURS_START: process.env.QUIET_HOURS_START || '20:00',
   QUIET_HOURS_END: process.env.QUIET_HOURS_END || '09:00',

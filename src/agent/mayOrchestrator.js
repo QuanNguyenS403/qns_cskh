@@ -82,6 +82,34 @@ export class MayOrchestrator {
       })
     }
 
+    // Hỏi thông tin tài khoản ngân hàng / chuyển khoản
+    if (/xin stk|số tài khoản|so tai khoan|stk|chuyển khoản qua đâu|ngân hàng nào|ngan hang nao|thông tin chuyển khoản/i.test(rawText)) {
+      customerMessage = 'Dạ thông tin thanh toán chuyển khoản chính thức của QuanNguyenS là:\n• Ngân hàng: Vietcombank (VCB)\n• Số tài khoản: 1050773506\n• Chủ tài khoản: NGUYEN DUC QUAN\n\nĐặc biệt, shop có ưu đãi giảm ngay 5% trực tiếp khi thanh toán chuyển khoản VietQR và miễn phí vận chuyển toàn quốc cho đơn từ 500k ạ. Khi bạn lên đơn, May sẽ tạo sẵn mã VietQR có đúng số tiền để bạn quét nhanh nhất nhé ạ!'
+      intentCodes.push('ask_bank_info')
+      nextStep = 'INFORM'
+      return this._finalizeOutput({
+        customerMessage,
+        intentCodes,
+        nextStep,
+        evidenceRefs: ['payment_banking_vietcombank@v1.0'],
+        emotionSignal,
+      })
+    }
+
+    // Hỏi link mạng xã hội / Fanpage / TikTok / Instagram / Website
+    if (/(tiktok|facebook|fanpage|instagram|website)/i.test(rawText) && /(link|kênh|kenh|đâu|dau|trang|xem|follow)/i.test(rawText)) {
+      customerMessage = 'Dạ các kênh chính thức của QuanNguyenS gồm có:\n• Website: https://quannguyens.com\n• Facebook: https://facebook.com/qns.style\n• Instagram: https://instagram.com/qns.style\n• TikTok: https://www.tiktok.com/@qns.style?lang=vi-VN\n\nBạn ghé theo dõi các kênh để cập nhật lookbook và các bộ sưu tập pijama mới nhất nhé ạ!'
+      intentCodes.push('ask_social_channels')
+      nextStep = 'INFORM'
+      return this._finalizeOutput({
+        customerMessage,
+        intentCodes,
+        nextStep,
+        evidenceRefs: ['brand_identity@v1.0'],
+        emotionSignal,
+      })
+    }
+
     // X29: Khủng hoảng cá nhân / stress (Blueprint §4.3, X29) -> Dừng bán, phản hồi ấm áp, handoff P0
     if (/stress|khủng hoảng|chuyện gia đình|buồn chuyện|đừng tư vấn mua bán/i.test(rawText)) {
       customerMessage = 'Dạ May rất chia sẻ với bạn trong thời điểm này. May xin phép không gửi thêm tin tư vấn bán hàng để bạn có không gian nghỉ ngơi ạ. Nếu sau này bạn cần bất kỳ hỗ trợ nào về sản phẩm hoặc đơn hàng, May luôn sẵn sàng lắng nghe khi bạn thoải mái hơn nhé.'
