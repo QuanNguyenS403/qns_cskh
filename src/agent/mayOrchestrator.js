@@ -70,7 +70,7 @@ export class MayOrchestrator {
 
     // X15: Hỏi là người hay bot
     if (/bạn là người hay bot|người thật hay robot|may là ai|quannguyens là ai|ai đang chat|phải bot không/i.test(rawText)) {
-      customerMessage = 'Dạ mình là QuanNguyenS, trợ lý AI tư vấn và chăm sóc khách hàng của thương hiệu QuanNguyenS. Mình luôn có mặt 24/7 để hỗ trợ bạn chọn mẫu, xem giá, tư vấn size và theo dõi đơn hàng ạ.'
+      customerMessage = 'Dạ mình là May, trợ lý AI tư vấn và chăm sóc khách hàng của thương hiệu QuanNguyenS. Mình luôn có mặt 24/7 để hỗ trợ bạn chọn mẫu, xem giá, tư vấn size và theo dõi đơn hàng ạ.'
       intentCodes.push('ask_identity')
       nextStep = 'INFORM'
       return this._finalizeOutput({

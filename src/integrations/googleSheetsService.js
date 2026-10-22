@@ -121,7 +121,7 @@ export class GoogleSheetsService {
       }
     }
 
-    // 2. Cập nhật hoặc ghi nhận đơn hàng trong Database
+    // 2. Cập nhật hoặc ghi nhận đơn hàng trong Database (D1/C4: Không tạo đơn ma 0đ)
     const existingOrder = db.prepare(`SELECT * FROM orders WHERE order_id = ?`).get(cleanOrderId)
     if (existingOrder) {
       db.prepare(`
@@ -130,14 +130,12 @@ export class GoogleSheetsService {
         WHERE order_id = ?
       `).run(now, cleanOrderId)
     } else {
-      // Lưu trữ đơn hàng mới từ Google Sheet vào DB để May có ngữ cảnh hỗ trợ
-      db.prepare(`
-        INSERT INTO orders (
-          order_id, tenant_id, shop_id, customer_name, customer_phone,
-          shipping_address, items_json, subtotal, shipping_fee, discount, total,
-          status, payment_status, source, created_at, updated_at
-        ) VALUES (?, 'quannguyens_corp', 'quannguyens_pijama', ?, ?, 'Google Sheet Entry', ?, 0, 0, 0, 0, 'DELIVERED', 'PAID', 'google_sheet', ?, ?)
-      `).run(cleanOrderId, customerName, customerPhone, JSON.stringify([{ name: items || 'Sản phẩm Pijama QuanNguyenS' }]), now, now)
+      console.warn(`⚠️ [GOOGLE SHEETS] Từ chối cập nhật: Đơn hàng ${cleanOrderId} không tồn tại trong hệ thống (H12/C4/D1). Không tạo đơn hàng ma 0đ.`)
+      return {
+        status: 'REJECTED',
+        error_code: 'ORDER_NOT_FOUND',
+        error: `Không tìm thấy đơn hàng ${cleanOrderId} trong hệ thống CSKH`,
+      }
     }
 
     // 3. Cập nhật hoặc tạo vận đơn trong bảng shipments
@@ -380,14 +378,20 @@ export class GoogleSheetsService {
     }
 
     // Chạy lần đầu ngay khi khởi động
-    setTimeout(() => {
+    const initialTimer = setTimeout(() => {
       this.pollGoogleSheet(db).catch((e) => console.error('Poller initial run error:', e.message))
     }, 5000)
+    if (initialTimer && typeof initialTimer.unref === 'function') {
+      initialTimer.unref()
+    }
 
     // Chạy định kỳ
     const timerId = setInterval(() => {
       this.pollGoogleSheet(db).catch((e) => console.error('Poller tick error:', e.message))
     }, intervalMs)
+    if (timerId && typeof timerId.unref === 'function') {
+      timerId.unref()
+    }
 
     return timerId
   }

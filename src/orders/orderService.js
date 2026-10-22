@@ -389,7 +389,23 @@ export class OrderService {
     const now = new Date().toISOString()
     const numericAmount = Math.floor(Number(amount))
 
-    // 1. Chống trùng giao dịch ngân hàng bằng UNIQUE(gateway, transaction_id)
+    if (!orderId) {
+      return {
+        status: 'UNMATCHED_ORDER',
+        message: `Giao dịch ${transactionId} không có mã đơn hàng hợp lệ`,
+      }
+    }
+
+    // 1. Tra cứu đơn hàng
+    const order = db.prepare(`SELECT * FROM orders WHERE order_id = ?`).get(orderId)
+    if (!order) {
+      return {
+        status: 'ORDER_NOT_FOUND',
+        message: `Không tìm thấy đơn hàng ${orderId} cho giao dịch ${transactionId}`,
+      }
+    }
+
+    // 2. Chống trùng giao dịch ngân hàng bằng UNIQUE(gateway, transaction_id)
     try {
       db.prepare(`
         INSERT INTO payments (
@@ -400,7 +416,7 @@ export class OrderService {
         `PAY-${Date.now()}-${transactionId}`,
         config.DEFAULT_TENANT_ID,
         config.DEFAULT_SHOP_ID,
-        orderId || 'UNKNOWN',
+        orderId,
         gateway,
         String(transactionId),
         numericAmount,
@@ -420,22 +436,6 @@ export class OrderService {
         }
       }
       throw err
-    }
-
-    if (!orderId) {
-      return {
-        status: 'UNMATCHED_ORDER',
-        message: `Giao dịch ${transactionId} không có mã đơn hàng hợp lệ`,
-      }
-    }
-
-    // 2. Tra cứu đơn hàng
-    const order = db.prepare(`SELECT * FROM orders WHERE order_id = ?`).get(orderId)
-    if (!order) {
-      return {
-        status: 'ORDER_NOT_FOUND',
-        message: `Không tìm thấy đơn hàng ${orderId} cho giao dịch ${transactionId}`,
-      }
     }
 
     // X18: Chuyển khoản vào đơn đã bị hủy

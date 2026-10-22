@@ -47,6 +47,14 @@ export class ZaloAdapter {
     }
 
     if (!this.token) {
+      if (config.NODE_ENV === 'production') {
+        console.error(`🚨 [ZALO ERROR] ZALO_ACCESS_TOKEN chưa cấu hình trong môi trường Production. Không thể gửi tin nhắn.`)
+        return {
+          sent: false,
+          error: 'ZALO_ACCESS_TOKEN not configured in production',
+          errorCode: 'TOKEN_MISSING',
+        }
+      }
       console.warn(`⚠️ [ZALO MOCK] ZALO_ACCESS_TOKEN chưa cấu hình. Trả kết quả giả lập an toàn.`)
       return {
         sent: true,

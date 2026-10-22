@@ -61,6 +61,14 @@ export class InstagramAdapter {
     }
 
     if (!this.token) {
+      if (config.NODE_ENV === 'production') {
+        console.error(`🚨 [INSTAGRAM ERROR] INSTAGRAM_ACCESS_TOKEN chưa cấu hình trong môi trường Production. Không thể gửi tin nhắn.`)
+        return {
+          sent: false,
+          error: 'INSTAGRAM_ACCESS_TOKEN not configured in production',
+          errorCode: 'TOKEN_MISSING',
+        }
+      }
       console.warn(`⚠️ [INSTAGRAM MOCK] INSTAGRAM_ACCESS_TOKEN chưa cấu hình. Trả kết quả giả lập an toàn.`)
       return {
         sent: true,

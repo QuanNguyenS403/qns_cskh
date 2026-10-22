@@ -16,12 +16,12 @@ export const INSECURE_DEFAULT_SECRETS = [
 /**
  * Kiểm tra tính hợp lệ của biến môi trường (Fail-Closed R-01)
  */
-export function validateEnvironment(env = process.env) {
+export function validateEnvironment(env = process.env, { throwOnError = false } = {}) {
   const currentEnv = env.NODE_ENV || 'production'
   const isProd = currentEnv === 'production'
 
   const confirmationSecret = env.CSKH_CONFIRMATION_SECRET || ''
-  const adminSecret = env.CSKH_ADMIN_SECRET || ''
+  const adminSecret = env.CSKH_ADMIN_SECRET || env.ADMIN_SECRET || ''
   const webhookSecret = env.CSKH_WEBHOOK_SECRET || ''
 
   const errors = []
@@ -39,6 +39,10 @@ export function validateEnvironment(env = process.env) {
     if (env.META_PAGE_ID && (!env.META_APP_SECRET || env.META_APP_SECRET.length < 16)) {
       errors.push('META_APP_SECRET bắt buộc ở production khi cấu hình Meta Integration')
     }
+  }
+
+  if (throwOnError && errors.length > 0) {
+    throw new Error(`[FATAL CONFIG ERROR] ${errors.join('; ')}`)
   }
 
   return { isValid: errors.length === 0, errors }

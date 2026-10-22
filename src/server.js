@@ -470,7 +470,7 @@ try {
   runMigrations(db)
   killSwitch.init(db)
   seedDefaultPolicies(db, config.DEFAULT_SHOP_ID, true)
-  if (config.GOOGLE_SHEET_AUTO_SYNC && config.NODE_ENV !== 'test') {
+  if (config.GOOGLE_SHEET_AUTO_SYNC && config.NODE_ENV !== 'test' && !process.env.NODE_TEST_CONTEXT) {
     GoogleSheetsService.startPoller(db)
   }
   console.log('✅ [CSKH DB] Cơ sở dữ liệu, Migration & Chính sách đã sẵn sàng.')
