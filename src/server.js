@@ -106,12 +106,58 @@ app.get('/api/policies', (req, res) => {
   return res.json({ success: true, policies })
 })
 
+import { MayOrchestrator } from './agent/mayOrchestrator.js'
+
+// ── MAY AI CSKH INTERACTION API (Blueprint §4, Phase 2) ──────
+app.post('/api/chat', apiLimiter, async (req, res) => {
+  try {
+    const db = getDb()
+    const orchestrator = new MayOrchestrator(db)
+    const { message, channel = 'web', senderId = 'web_guest', conversationState = {} } = req.body || {}
+    
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ success: false, error: 'Tham số message là bắt buộc' })
+    }
+
+    const response = await orchestrator.processMessage({
+      text: message,
+      channel,
+      senderId,
+      conversationState,
+    })
+
+    return res.json({ success: true, ...response })
+  } catch (err) {
+    console.error('Lỗi xử lý chat May:', err)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
 // ── META PLATFORM WEBHOOK (Messenger, Instagram, Threads) ────
 app.get('/api/webhook/meta', handleMetaWebhookGet)
 app.post('/api/webhook/meta', webhookLimiter, async (req, res) => {
   await handleMetaWebhookPost(req, res, async (inboundMessage) => {
     console.log(`📩 [INBOUND OMNICHANNEL] Từ ${inboundMessage.channel} (${inboundMessage.channelSenderId}): "${inboundMessage.text}"`)
-    // Điểm kết nối điều phối tới May Agent Orchestrator (Phase 2)
+    try {
+      const db = getDb()
+      const orchestrator = new MayOrchestrator(db)
+      const mayResponse = await orchestrator.processMessage({
+        text: inboundMessage.text,
+        channel: inboundMessage.channel,
+        senderId: inboundMessage.channelSenderId,
+      })
+
+      // Gửi phản hồi qua adapter tương ứng có can_send bảo vệ
+      if (inboundMessage.channel === 'messenger') {
+        await messengerAdapter.sendMessage({ recipientId: inboundMessage.channelSenderId, text: mayResponse.customer_message })
+      } else if (inboundMessage.channel === 'instagram') {
+        await instagramAdapter.sendMessage({ recipientId: inboundMessage.channelSenderId, text: mayResponse.customer_message })
+      } else if (inboundMessage.channel === 'threads') {
+        await threadsAdapter.replyToPost({ postId: inboundMessage.channelSenderId, text: mayResponse.customer_message })
+      }
+    } catch (e) {
+      console.error(`❌ [MAY DISPATCH ERROR ${inboundMessage.channel}]:`, e.message)
+    }
   })
 })
 
