@@ -17,10 +17,12 @@ import { getApprovedPolicy, POLICY_TYPES } from '../policies/policyRegistry.js'
 import { GroundingChecker } from './groundingChecker.js'
 import { buildSystemPrompt } from './systemPrompt.js'
 import { llmClient } from './llmClient.js'
+import { ConversationStore } from './conversationStore.js'
 
 export class MayOrchestrator {
   constructor(db) {
     this.db = db
+    this._activeConversation = null
   }
 
   /**
@@ -31,6 +33,7 @@ export class MayOrchestrator {
    * @param {string} params.channel Kênh tiếp nhận ('web', 'messenger', 'instagram', 'threads', 'zalo')
    * @param {string} params.senderId ID định danh của khách trên kênh
    * @param {Object} [params.conversationState] Trạng thái phiên hiện tại
+   * @param {string} [params.providerMessageId] Mã tin nhắn từ nhà cung cấp webhook
    * @returns {Object} Standardized May Output Envelope (Phụ lục A)
    */
   async processMessage({
@@ -38,9 +41,59 @@ export class MayOrchestrator {
     channel = 'web',
     senderId = 'anonymous',
     conversationState = {},
+    providerMessageId = null,
   }) {
     const rawText = String(text || '').trim()
     const normText = normalizeVietnamese(rawText)
+
+    // Khởi tạo phiên hội thoại bền vững nếu có Database kết nối (R1)
+    this._activeConversation = null
+    if (this.db) {
+      const conv = ConversationStore.getOrCreateConversation(this.db, {
+        channel,
+        channelSenderId: senderId,
+      })
+      this._activeConversation = conv
+
+      // Chặn Bot tự động can thiệp nếu phiên đang do Nhân viên/Chủ shop tiếp quản (HUMAN)
+      if (conv.conversation_owner === 'HUMAN') {
+        ConversationStore.saveMessage(this.db, {
+          conversationId: conv.id,
+          senderType: 'CUSTOMER',
+          senderId,
+          contentText: rawText,
+          direction: 'INBOUND',
+          providerMessageId,
+        })
+
+        return {
+          customer_message: null,
+          suppressed: true,
+          reason: 'CONVERSATION_OWNED_BY_HUMAN',
+          conversation_id: conv.id,
+          language: 'vi',
+          intent_codes: [],
+          next_step: 'HUMAN_AGENT',
+          action_proposals: [],
+          evidence_refs: [],
+          memory_proposals: [],
+          promise_proposals: [],
+          handoff: { required: true, reason_code: 'HUMAN_ACTIVE', priority: 'P1' },
+          needs_identity_verification: false,
+          emotion_signal: 'neutral',
+        }
+      }
+
+      // Lưu tin nhắn đến của khách vào CSDL
+      ConversationStore.saveMessage(this.db, {
+        conversationId: conv.id,
+        senderType: 'CUSTOMER',
+        senderId,
+        contentText: rawText,
+        direction: 'INBOUND',
+        providerMessageId,
+      })
+    }
 
     // Khởi tạo các proposal và kết quả
     const intentCodes = []
@@ -462,6 +515,34 @@ export class MayOrchestrator {
       console.warn('⚠️ [GROUNDING CHECK WARNING]:', checkResult.violations)
     }
 
-    return checkResult.sanitizedOutput || rawOutput
+    const sanitized = checkResult.sanitizedOutput || rawOutput
+
+    // Lưu tin nhắn phản hồi của Bot vào CSDL và cập nhật trạng thái phiên (R1)
+    if (this.db && this._activeConversation) {
+      sanitized.conversation_id = this._activeConversation.id
+
+      if (sanitized.customer_message) {
+        ConversationStore.saveMessage(this.db, {
+          conversationId: this._activeConversation.id,
+          senderType: 'BOT',
+          senderId: 'may',
+          contentText: sanitized.customer_message,
+          payloadJson: sanitized,
+          direction: 'OUTBOUND',
+        })
+      }
+
+      // Nếu yêu cầu Handoff P0 hoặc P1 -> Giao quyền sở hữu hội thoại cho Nhân viên (HUMAN)
+      if (sanitized.handoff?.required && (sanitized.handoff.priority === 'P0' || sanitized.handoff.priority === 'P1')) {
+        ConversationStore.setConversationOwner(
+          this.db,
+          this._activeConversation.id,
+          'HUMAN',
+          sanitized.handoff.reason_code || 'URGENT_HANDOFF'
+        )
+      }
+    }
+
+    return sanitized
   }
 }

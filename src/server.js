@@ -232,12 +232,35 @@ app.post('/api/webhook/meta', webhookLimiter, async (req, res) => {
     console.log(`📩 [INBOUND OMNICHANNEL] Từ ${inboundMessage.channel} (${inboundMessage.channelSenderId}): "${inboundMessage.text}"`)
     try {
       const db = getDb()
+
+      // Chống xử lý trùng lặp sự kiện Meta Webhook (H13, R1)
+      if (inboundMessage.messageId) {
+        const ingestRes = eventGateway.ingestEvent({
+          eventId: inboundMessage.messageId,
+          source: inboundMessage.channel,
+          eventType: 'message.received',
+          entityType: 'customer',
+          entityId: inboundMessage.channelSenderId,
+          payload: inboundMessage,
+        })
+
+        if (ingestRes.isDuplicate) {
+          console.log(`ℹ️ [META WEBHOOK DEDUP] Bỏ qua tin nhắn trùng lặp từ ${inboundMessage.channel} (${inboundMessage.messageId})`)
+          return
+        }
+      }
+
       const orchestrator = new MayOrchestrator(db)
       const mayResponse = await orchestrator.processMessage({
         text: inboundMessage.text,
         channel: inboundMessage.channel,
         senderId: inboundMessage.channelSenderId,
+        providerMessageId: inboundMessage.messageId,
       })
+
+      if (!mayResponse || !mayResponse.customer_message) {
+        return
+      }
 
       // Gửi phản hồi qua adapter tương ứng có can_send bảo vệ
       if (inboundMessage.channel === 'messenger') {
@@ -296,6 +319,7 @@ app.post('/api/webhook/zalo', webhookLimiter, async (req, res) => {
       text: inbound.text,
       channel: 'zalo',
       senderId: inbound.channelSenderId,
+      providerMessageId: inbound.messageId,
     })
 
     if (mayResponse.customer_message) {
