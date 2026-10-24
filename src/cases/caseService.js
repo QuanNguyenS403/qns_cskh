@@ -135,8 +135,12 @@ export class CaseService {
 
     // 5. Xác định ai chịu phí vận chuyển
     let feePayer = 'customer_or_shared'
+    let mandatoryCarrier = null
+    let shippingNote = null
     if (reasonType === 'DEFECTIVE' || reasonType === 'WRONG_ITEM') {
-      feePayer = 'shop_pays_100' // Hàng lỗi shop chịu 100% phí ship 2 chiều (X23)
+      feePayer = 'shop_pays_100' // Hàng lỗi shop chịu 100% phí ship 2 chiều khi hoàn qua Viettel Post (X23)
+      mandatoryCarrier = 'Viettel Post'
+      shippingNote = 'Bắt buộc hoàn sản phẩm theo đơn vị vận chuyển Viettel Post, nếu sử dụng đơn vị vận chuyển khác thì shop xin phép thu phí ship của bạn.'
     }
 
     return {
@@ -144,6 +148,8 @@ export class CaseService {
       order_id: orderId,
       reason_type: reasonType,
       fee_payer: feePayer,
+      mandatory_return_carrier: mandatoryCarrier,
+      shipping_note: shippingNote,
       policy_snapshot_source: policyResult.source,
       allowed_days: returnPolicy.exchangeWindowDays,
       replacement_size: requestedSize,

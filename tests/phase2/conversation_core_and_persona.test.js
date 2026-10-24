@@ -1,4 +1,4 @@
-﻿import { describe, it, beforeEach } from 'node:test'
+import { describe, it, beforeEach } from 'node:test'
 import assert from 'node:assert'
 import { DatabaseSync } from 'node:sqlite'
 import { runMigrations } from '../../src/db/migrations.js'
@@ -154,6 +154,17 @@ describe('PHASE 2: QuanNguyenS Conversation Core, Persona & Grounding (X01–X15
 
       assert.ok(res.customer_message.includes('không thể thực hiện'))
       assert.strictEqual(res.action_proposals.length, 0, 'Không được phát sinh bất kỳ tool giảm giá trái phép nào')
+    })
+
+    it('X23: Hỏi chính sách hàng lỗi vải, sút chỉ, đường may -> Nêu rõ shop chịu 100% ship 2 chiều & bắt buộc qua Viettel Post', async () => {
+      const res = await orchestrator.processMessage({
+        text: 'Nếu đồ nhận về bị lỗi vải hoặc sút chỉ đường may thì đổi thế nào shop?',
+      })
+
+      assert.ok(res.customer_message.includes('100% phí ship 2 chiều'))
+      assert.ok(res.customer_message.includes('Viettel Post'))
+      assert.ok(res.customer_message.includes('thu phí ship'))
+      assert.strictEqual(res.next_step, 'INFORM')
     })
   })
 

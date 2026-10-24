@@ -1,4 +1,4 @@
-﻿import dotenv from 'dotenv'
+import dotenv from 'dotenv'
 import path from 'path'
 import fs from 'fs'
 import crypto from 'node:crypto'
@@ -161,6 +161,7 @@ export const config = {
 
   // Tự động hóa chăm sóc vòng đời & Giờ yên tĩnh
   OUTBOUND_ENABLED: process.env.OUTBOUND_ENABLED === 'true',
+  QUIET_HOURS_ENABLED: process.env.QUIET_HOURS_ENABLED === 'true', // Mặc định false (đã loại bỏ theo yêu cầu của Shop)
   QUIET_HOURS_START: process.env.QUIET_HOURS_START || '20:00',
   QUIET_HOURS_END: process.env.QUIET_HOURS_END || '09:00',
   MARKETING_MAX_7D: parseInt(process.env.MARKETING_MAX_7D || '1', 10),

@@ -155,6 +155,21 @@ export const KNOWLEDGE_DOCS = [
       - KHÔNG ĐƯỢC tuyên bố vải nhập khẩu từ Châu Âu (B02, T03) vì thông tin này chưa được xác minh hoặc không chính xác. Pijama thiết kế theo phong cách Châu Âu, nhưng vải dệt từ sợi tự nhiên thân thiện sinh thái.
     `.trim(),
   },
+
+  // 6. Chính sách đổi trả & bảo hành hàng lỗi vải, sút chỉ, đường may (Gate X23, X24)
+  {
+    doc_id: 'returns_and_defects_policy',
+    version: 'v1.0',
+    category: 'policy',
+    title: 'Chính sách đổi trả hàng & bảo hành lỗi vải, sút chỉ, đường may',
+    tags: ['doi tra', 'hang loi', 'loi vai', 'sut chi', 'duong may', 'phi ship', 'viettel post', 'hoan hang', 'bao hanh', 'rach'],
+    content: `
+      Chính sách đổi trả và xử lý sản phẩm lỗi của QuanNguyenS:
+      - Đối với hàng lỗi do sản xuất (lỗi vải, sút chỉ, đường may, hỏng cúc): Shop chịu 100% phí ship 2 chiều để gửi đồ mới đổi cho khách hàng.
+      - YÊU CẦU BẮT BUỘC: Bắt buộc hoàn sản phẩm theo đơn vị vận chuyển Viettel Post. Nếu khách hàng sử dụng đơn vị vận chuyển khác thì shop xin phép thu phí ship của bạn.
+      - Đối với nhu cầu đổi size thông thường: Hỗ trợ đổi size trong vòng 7 ngày kể từ khi nhận hàng (sản phẩm còn nguyên tem mác, chưa qua sử dụng/giặt ủi).
+    `.trim(),
+  },
 ]
 
 export class KnowledgeBase {

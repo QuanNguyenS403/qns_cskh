@@ -167,8 +167,8 @@ export class CanSendGate {
       }
     }
 
-    // 7. Kiểm tra Giờ nghỉ (Quiet Hours: 20:00 -> 09:00 sáng hôm sau)
-    if (messageType === 'marketing' && this.isQuietHours(now)) {
+    // 7. Kiểm tra Giờ nghỉ (Quiet Hours) - Đã loại bỏ theo yêu cầu của Shop (chỉ kích hoạt nếu bật QUIET_HOURS_ENABLED=true)
+    if (config.QUIET_HOURS_ENABLED && messageType === 'marketing' && this.isQuietHours(now)) {
       return {
         decision: 'DEFER',
         reasonCode: 'QUIET_HOURS',

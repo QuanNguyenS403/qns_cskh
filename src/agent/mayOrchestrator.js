@@ -1,4 +1,4 @@
-﻿/**
+/**
  * QUANNGUYENS CSKH ORCHESTRATOR & CONVERSATION CORE (Blueprint §4, §6.3, Prompt B, Phụ lục A, C)
  * 
  * Bộ não điều phối toàn bộ hội thoại của QuanNguyenS:
@@ -259,6 +259,21 @@ export class MayOrchestrator {
         handoff,
         promiseProposals,
         emotionSignal: 'angry',
+      })
+    }
+
+    // X23: Hỏi về chính sách hàng lỗi sản xuất (lỗi vải, sút chỉ, đường may)
+    if (/lỗi vải|sút chỉ|đường may|hàng lỗi|bị rách|áo lỗi|quần lỗi|bị lỗi/i.test(rawText)) {
+      customerMessage = 'Dạ đối với trường hợp sản phẩm gặp lỗi do sản xuất như lỗi vải, sút chỉ hay đường may, QuanNguyenS cam kết chịu 100% phí ship 2 chiều để gửi đồ mới đổi cho bạn ạ. Bạn lưu ý giúp shop yêu cầu bắt buộc là hoàn sản phẩm theo đơn vị vận chuyển Viettel Post nhé ạ; nếu bạn sử dụng đơn vị vận chuyển khác thì shop xin phép thu phí ship của bạn ạ.'
+      intentCodes.push('ask_defective_return_policy')
+      nextStep = 'INFORM'
+      evidenceRefs.push(`policy_${POLICY_TYPES.RETURNS}@v1.0`)
+      return this._finalizeOutput({
+        customerMessage,
+        intentCodes,
+        nextStep,
+        evidenceRefs,
+        emotionSignal: 'neutral',
       })
     }
 

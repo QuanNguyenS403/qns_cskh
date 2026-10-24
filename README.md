@@ -1,4 +1,4 @@
-﻿# QUANNGUYENS — AI AGENT CSKH & HỆ THỐNG CHĂM SÓC VÒNG ĐỜI KHÁCH HÀNG 24/7
+# QUANNGUYENS — AI AGENT CSKH & HỆ THỐNG CHĂM SÓC VÒNG ĐỜI KHÁCH HÀNG 24/7
 
 **Thương hiệu:** QuanNguyenS · [quannguyens.com](https://quannguyens.com/)  
 **Phong cách:** Pyjama & Loungewear European Casual  
@@ -34,7 +34,7 @@ Hệ thống được thiết kế và xây dựng độc lập 100% trong `D:\C
 5. **B06 Token xác nhận giao dịch:** Thao tác tạo đơn và sửa đơn bắt buộc dùng Confirmation Token HMAC-SHA256 (TTL 5 phút, khóa theo hash payload, chỉ dùng 1 lần).
 6. **B08 Ghi nhận PAID có căn cứ:** Chỉ ghi nhận đơn đã thanh toán khi có dữ liệu webhook xác thực từ ngân hàng/cổng thanh toán. Không ghi PAID từ ảnh chụp màn hình do khách gửi.
 7. **B10 Chống IDOR:** Mã đơn hàng đơn lẻ không đủ để xem thông tin đơn; bắt buộc phải xác minh đúng số điện thoại của người đặt hàng.
-8. **B12 Kiểm soát can_send:** Mọi tin nhắn chủ động đều đi qua cổng `can_send` kiểm tra cửa sổ 24h, giờ nghỉ ban đêm (20:00–09:00), hủy job ngay khi khách opt-out và chặn tin tiếp thị nếu đơn hàng đang có khiếu nại chưa xử lý xong.
+8. **B12 Kiểm soát can_send:** Mọi tin nhắn chủ động đều đi qua cổng `can_send` kiểm tra cửa sổ 24h, hủy job ngay khi khách opt-out và chặn tin tiếp thị nếu đơn hàng đang có khiếu nại chưa xử lý xong (Khung giờ yên tĩnh ban đêm đã loại bỏ theo yêu cầu của Shop).
 9. **B15 Chống Prompt Injection:** Tin nhắn từ khách là dữ liệu không tin cậy (`<untrusted_user_input>`), không thể ghi đè quy tắc hệ thống, không thể tự nâng quyền admin.
 
 ---
@@ -90,7 +90,7 @@ D:\CSKH\
 │   ├── events\
 │   │   └── eventGateway.js    # Cổng sự kiện khử trùng lặp (Idempotent)
 │   ├── channels\
-│   │   ├── canSend.js         # Cổng kiểm soát gửi tin: 24h window, quiet hours, case suppression
+│   │   ├── canSend.js         # Cổng kiểm soát gửi tin: 24h window, opt-out, case suppression
 │   │   ├── metaWebhook.js     # Webhook tích hợp Facebook Messenger, Instagram, Threads
 │   │   ├── messengerAdapter.js# Adapter Facebook Messenger (Graph API v21.0)
 │   │   ├── instagramAdapter.js# Adapter Instagram Direct Messaging

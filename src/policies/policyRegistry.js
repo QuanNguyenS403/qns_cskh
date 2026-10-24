@@ -265,7 +265,9 @@ export function seedDefaultPolicies(db, shopId = 'quannguyens', approved = true)
         'Không có mùi lạ, không dơ bẩn hoặc rách hỏng do tác động ngoài',
       ],
       shippingFeePayer: {
-        defectiveOrWrongItem: 'shop_pays_100', // Lỗi do shop: shop chịu 100% phí ship 2 chiều
+        defectiveOrWrongItem: 'shop_pays_100', // Lỗi do shop: shop chịu 100% phí ship 2 chiều khi hoàn qua Viettel Post
+        defectiveReturnCarrier: 'Viettel Post', // Bắt buộc hoàn qua Viettel Post
+        defectiveReturnCarrierRule: 'Bắt buộc hoàn sản phẩm theo đơn vị vận chuyển Viettel Post, nếu sử dụng đơn vị vận chuyển khác thì shop xin phép thu phí ship của bạn.',
         sizeExchangePreference: 'customer_or_shared', // Đổi size theo ý khách: hỗ trợ theo quy định
       },
       refundProcessingDays: 3, // Hoàn tiền trong 3 ngày làm việc sau khi nhận lại hàng

@@ -1,4 +1,4 @@
-﻿# SỔ TAY VẬN HÀNH HỆ THỐNG AI AGENT CSKH MAY — QUANNGUYENS (quannguyens.com)
+# SỔ TAY VẬN HÀNH HỆ THỐNG AI AGENT CSKH MAY — QUANNGUYENS (quannguyens.com)
 
 **Phiên bản:** 1.0 · **Ngày phát hành:** 22/10/2026 · **Múi giờ:** Asia/Ho_Chi_Minh  
 **Căn cứ:** `QuanNguyenS_AI_CSKH_Master_Blueprint_v2_2026-10-22.md` & Master Build Prompts A & B  
@@ -68,7 +68,7 @@ Khách hỏi giá/size ──> May nhận diện mẫu (nếu mập mờ -> hỏ
   - Chuyển vào đơn đã hủy (X18) -> Cắm cờ `FLAGGED_CANCELLED_ORDER`, mở case hỗ trợ.
 
 ### 3.4. Quy trình Đổi / Trả / Sự cố giao hàng
-- Đơn hàng gặp sự cố lỗi vải/đường may (X23): Shop chịu 100% phí ship 2 chiều.
+- Đơn hàng gặp sự cố lỗi vải/đường may (X23): Shop chịu 100% phí ship 2 chiều để gửi đồ mới đổi cho khách, VỚI ĐIỀU KIỆN bắt buộc hoàn sản phẩm theo đơn vị vận chuyển Viettel Post. Nếu sử dụng đơn vị vận chuyển khác thì shop xin phép thu phí ship của bạn.
 - Đổi size nhưng hết hàng (X24): May thông báo trung thực, đưa 3 lựa chọn (chờ hàng mới, đổi mẫu khác bằng giá, hoặc hoàn tiền). Tuyệt đối không tự ý đổi mẫu.
 - Scan "đã giao" nhưng khách báo chưa nhận (V6): May ghi nhận sự cố thật, mở ngay Case P1 đối soát bưu cục, dừng mọi kịch bản bán thêm/chăm sóc.
 
@@ -83,4 +83,4 @@ Khách hỏi giá/size ──> May nhận diện mẫu (nếu mập mờ -> hỏ
    - Theo dõi trạng thái Webhook Meta Platform và SePay trong logs.
    - Xử lý các Case P1/P0 được May điều phối (Handoff).
 3. **Cuối ngày (22:00):**
-   - Hệ thống tự động kích hoạt Quiet Hours (20:00 – 09:00 sáng hôm sau): Toàn bộ tin nhắn chủ động tiếp thị tự động hoãn (DEFER).
+   - Hệ thống tiếp tục duy trì tiếp nhận và chăm sóc tin nhắn 24/7 (Khung giờ yên tĩnh Quiet Hours đã được loại bỏ theo yêu cầu của Shop).

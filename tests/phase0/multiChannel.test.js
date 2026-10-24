@@ -1,4 +1,4 @@
-﻿import test from 'node:test'
+import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'fs'
 import path from 'path'
@@ -43,7 +43,7 @@ test('Phase 0 & Multi-Channel - can_send Runtime & Channel Gate Checks', async (
   assert.strictEqual(humanAgentCheck.reasonCode, 'BOT_CANNOT_USE_HUMAN_AGENT')
 
   // 3. Cửa sổ 24 giờ của Messenger / Instagram
-  const now = new Date('2026-10-22T14:00:00+07:00')
+  const now = new Date()
   const interaction25hAgo = new Date(now.getTime() - 25 * 60 * 60 * 1000).toISOString()
   const interaction2hAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString()
 
@@ -111,7 +111,7 @@ test('Phase 0 & Multi-Channel - can_send Runtime & Channel Gate Checks', async (
   assert.strictEqual(optOutCheck.decision, 'DENY')
   assert.strictEqual(optOutCheck.reasonCode, 'CUSTOMER_OPTED_OUT')
 
-  // 6. Quiet Hours: Đêm 22:30 -> Dời lịch gửi (DEFER)
+  // 6. Quiet Hours đã loại bỏ theo yêu cầu của Shop -> Cho phép gửi ban đêm (ALLOW)
   const nightTime = new Date('2026-10-22T22:30:00+07:00')
   const quietCheck = canSend.evaluate({
     customerId: 'cust_normal_1',
@@ -119,8 +119,8 @@ test('Phase 0 & Multi-Channel - can_send Runtime & Channel Gate Checks', async (
     messageType: 'marketing',
     now: nightTime,
   })
-  assert.strictEqual(quietCheck.decision, 'DEFER')
-  assert.strictEqual(quietCheck.reasonCode, 'QUIET_HOURS')
+  assert.strictEqual(quietCheck.decision, 'ALLOW')
+  assert.strictEqual(quietCheck.reasonCode, 'PASSED_ALL_CHECKS')
 
   // 7. Test Meta Webhook Verification (hub.mode = subscribe)
   let verifyStatus = 0

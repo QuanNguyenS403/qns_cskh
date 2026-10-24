@@ -63,6 +63,9 @@ describe('PHASE 4: Post-Purchase, Cases, RMA, Tracking & Promises (Gates T23–T
 
       assert.strictEqual(rma.status, 'SUCCEEDED')
       assert.strictEqual(rma.fee_payer, 'shop_pays_100')
+      assert.strictEqual(rma.mandatory_return_carrier, 'Viettel Post')
+      assert.ok(rma.shipping_note.includes('Viettel Post'))
+      assert.ok(rma.shipping_note.includes('thu phí ship'))
       assert.strictEqual(rma.policy_snapshot_source, 'order_snapshot')
     })
 
