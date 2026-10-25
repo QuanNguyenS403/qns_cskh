@@ -1,4 +1,4 @@
-﻿import express from 'express'
+import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import crypto from 'node:crypto'
@@ -39,7 +39,14 @@ const app = express()
 app.use(helmet())
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || config.NODE_ENV !== 'production' || config.CORS_ORIGIN.includes(origin)) {
+    if (
+      !origin ||
+      config.NODE_ENV !== 'production' ||
+      config.CORS_ORIGIN.includes(origin) ||
+      origin.startsWith('chrome-extension://') ||
+      origin.includes('facebook.com') ||
+      origin.includes('instagram.com')
+    ) {
       callback(null, true)
     } else {
       callback(new Error('Blocked by CORS policy'))
@@ -205,15 +212,26 @@ app.post('/api/payment/generate-qr', apiLimiter, (req, res) => {
 
 import { MayOrchestrator } from './agent/mayOrchestrator.js'
 
-// ── QUANNGUYENS AI CSKH INTERACTION API (Blueprint §4, Phase 2) ──────
+// ── QUANNGUYENS AI CSKH INTERACTION API (Blueprint §4, Phase 2, Co-Pilot RPA) ──────
 app.post('/api/chat', apiLimiter, async (req, res) => {
   try {
     const db = getDb()
     const orchestrator = new MayOrchestrator(db)
-    const { message, channel = 'web', senderId = 'web_guest', conversationState = {} } = req.body || {}
+    const {
+      message,
+      channel = 'copilot',
+      senderId = 'copilot_agent',
+      conversationState = {},
+      isCopilot = true,
+      customerName = null,
+    } = req.body || {}
     
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ success: false, error: 'Tham số message là bắt buộc' })
+    }
+
+    if (customerName) {
+      conversationState.customerName = customerName
     }
 
     const response = await orchestrator.processMessage({
@@ -221,6 +239,7 @@ app.post('/api/chat', apiLimiter, async (req, res) => {
       channel,
       senderId,
       conversationState,
+      isCopilot,
     })
 
     return res.json({ success: true, ...response })

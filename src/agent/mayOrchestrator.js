@@ -42,6 +42,7 @@ export class MayOrchestrator {
     senderId = 'anonymous',
     conversationState = {},
     providerMessageId = null,
+    isCopilot = false,
   }) {
     const rawText = String(text || '').trim()
     const normText = normalizeVietnamese(rawText)
@@ -56,7 +57,8 @@ export class MayOrchestrator {
       this._activeConversation = conv
 
       // Chặn Bot tự động can thiệp nếu phiên đang do Nhân viên/Chủ shop tiếp quản (HUMAN)
-      if (conv.conversation_owner === 'HUMAN') {
+      // Ngoại trừ chế độ Co-Pilot (Chủ shop trực tiếp yêu cầu AI trợ lý gợi ý)
+      if (conv.conversation_owner === 'HUMAN' && !isCopilot && channel !== 'copilot') {
         ConversationStore.saveMessage(this.db, {
           conversationId: conv.id,
           senderType: 'CUSTOMER',
@@ -124,7 +126,8 @@ export class MayOrchestrator {
     const isGreeting = /^(lô|lo|alo|chào|chào shop|chao shop|hi|hello|hey|shop ơi|shop oi|ad ơi|ad oi|sốp|sop|ra đây|ra day|có ai không|co ai khong|ai đó|ai do|có đó không|co do khong)$/i.test(cleanGreeting) ||
       /^(lô|lo|alo|hi|hello)\s+(shop|ad|bạn|sốp)/i.test(cleanGreeting)
     if (isGreeting) {
-      customerMessage = 'Dạ QuanNguyenS xin chào bạn! Mình là trợ lý AI của QuanNguyenS. Mình luôn có mặt 24/7 để hỗ trợ bạn xem mẫu pijama, tư vấn size theo chiều cao cân nặng, báo giá ưu đãi và hỗ trợ đơn hàng ạ. Bạn đang cần shop hỗ trợ thông tin gì ạ?'
+      const greetingTarget = conversationState.customerName ? ` bạn ${conversationState.customerName}` : ' bạn'
+      customerMessage = `Dạ QuanNguyenS xin chào${greetingTarget}! Mình là trợ lý AI của QuanNguyenS. Mình luôn có mặt 24/7 để hỗ trợ bạn xem mẫu pijama, tư vấn size theo chiều cao cân nặng, báo giá ưu đãi và hỗ trợ đơn hàng ạ. Bạn đang cần shop hỗ trợ thông tin gì ạ?`
       intentCodes.push('greeting')
       nextStep = 'INFORM'
       return this._finalizeOutput({
@@ -132,6 +135,23 @@ export class MayOrchestrator {
         intentCodes,
         nextStep,
         evidenceRefs: ['brand_identity@v1.0'],
+        emotionSignal,
+      })
+    }
+
+    // ── 1.2. HỎI MUA HÀNG CHUNG / XEM MẪU / TƯ VẤN QUẦN ÁO (Mua quần áo, Mua đồ, Xem mẫu, Có mẫu nào...) ──
+    const isBrowsingGeneral = /^(mua quần áo|mua đồ|mua do|mua quan ao|mua pijama|mua đồ ngủ|xem mẫu|xem mau|tư vấn mẫu|tu van mau|có mẫu nào|co mau nao|shop bán gì|shop ban gi|có những mẫu nào|các mẫu pijama|mẫu mới|bộ sưu tập)$/i.test(cleanGreeting) ||
+      /mua quần áo|mua pijama|mua đồ ngủ|xem các mẫu/i.test(rawText)
+    if (isBrowsingGeneral) {
+      const greetingTarget = conversationState.customerName ? ` bạn ${conversationState.customerName}` : ' bạn'
+      customerMessage = `Dạ QuanNguyenS xin chào${greetingTarget} ạ! 💕\n\nShop hiện có sẵn các set pyjama thiết kế phong cách Châu Âu từ chất liệu sợi tự nhiên cao cấp (Cotton & Modal Blend) mềm mịn, thoáng khí 4 mùa:\n\n🌿 1. The Classic Set (Daybreak) – Sọc hồng pastel nhẹ nhàng, thanh lịch: 390.000đ (Ưu đãi từ 490k)\n🌿 2. The Café Look (Stillwater) – Họa tiết caro navy cổ điển, sang trọng (Best-Seller): 550.000đ (Freeship toàn quốc)\n🌿 3. The Evening Edit (Hearth) – Dệt đầm tay ấm áp, form suông cao cấp: 750.000đ (Freeship toàn quốc)\n\nKhông biết bạn đang muốn tìm mẫu mặc nhà thoải mái thường ngày hay mặc phòng điều hòa ạ? Bạn có thể chia sẻ cho shop xin chiều cao và cân nặng để em tư vấn size vừa vặn nhất cho mình nhé! ✨`
+      intentCodes.push('browse_catalog', 'ask_size_preference')
+      nextStep = 'ASK_FIT_PREFERENCE'
+      return this._finalizeOutput({
+        customerMessage,
+        intentCodes,
+        nextStep,
+        evidenceRefs: ['brand_identity@v1.0', 'catalog_products@v1.0'],
         emotionSignal,
       })
     }
