@@ -200,6 +200,24 @@ export class MayOrchestrator {
       })
     }
 
+    // Khách gửi Số điện thoại đặt hàng / chốt đơn (VD: 0912345678, +84988776655)
+    const phoneMatch = rawText.match(/(?:(?:\+84|0)(?:3|5|7|8|9)\d{8})\b/)
+    if (phoneMatch) {
+      const detectedPhone = phoneMatch[0]
+      const targetName = conversationState.customerName ? ` bạn ${conversationState.customerName}` : ' bạn'
+      customerMessage = `Dạ QuanNguyenS xin cảm ơn${targetName} đã gửi thông tin đặt hàng ạ! 💕\n\nShop đã ghi nhận số điện thoại ${detectedPhone}. Để shop đóng gói gửi đồ chuẩn xác nhất cho mình, bạn cho shop xin thêm:\n1. Họ tên người nhận\n2. Địa chỉ nhận hàng chi tiết (Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành)\n3. Set đồ & Size bạn chọn (nếu chưa báo)\n\nĐặc biệt shop có ưu đãi giảm ngay 5% trực tiếp khi chuyển khoản VietQR và Freeship cho đơn từ 500k ạ. Shop sẽ chuẩn bị đơn ngay cho bạn nhé! ✨`
+      intentCodes.push('provide_phone', 'order_placement')
+      nextStep = 'ASK_SHIPPING_ADDRESS'
+      return this._finalizeOutput({
+        customerMessage,
+        intentCodes,
+        nextStep,
+        actionProposals: [{ tool: 'prepare_order', args: { phone: detectedPhone } }],
+        evidenceRefs: ['order_checkout_flow@v1.0'],
+        emotionSignal: 'neutral',
+      })
+    }
+
     // X29: Khủng hoảng cá nhân / stress (Blueprint §4.3, X29) -> Dừng bán, phản hồi ấm áp, handoff P0
     if (/stress|khủng hoảng|chuyện gia đình|buồn chuyện|đừng tư vấn mua bán/i.test(rawText)) {
       customerMessage = 'Dạ QuanNguyenS rất chia sẻ với bạn trong thời điểm này. QuanNguyenS xin phép không gửi thêm tin tư vấn bán hàng để bạn có không gian nghỉ ngơi ạ. Nếu sau này bạn cần bất kỳ hỗ trợ nào về sản phẩm hoặc đơn hàng, QuanNguyenS luôn sẵn sàng lắng nghe khi bạn thoải mái hơn nhé.'

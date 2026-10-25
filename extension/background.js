@@ -58,7 +58,7 @@ async function checkHealth() {
   }
 }
 
-async function handleCallQns({ message, customerName, channel = 'copilot' }) {
+async function handleCallQns({ message, customerName, channel = 'copilot', history = [] }) {
   const baseUrl = await getServerUrl()
   try {
     const controller = new AbortController()
@@ -74,6 +74,7 @@ async function handleCallQns({ message, customerName, channel = 'copilot' }) {
         channel,
         customerName: customerName || null,
         isCopilot: true,
+        history: Array.isArray(history) ? history : [],
       }),
       signal: controller.signal,
     })

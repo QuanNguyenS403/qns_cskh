@@ -63,6 +63,7 @@ app.use(express.json({
 // Rate Limiters
 const webhookLimiter = createRateLimiter({ windowMs: 60000, max: 120, message: 'Too many webhook requests' })
 const apiLimiter = createRateLimiter({ windowMs: 60000, max: 60, message: 'Rate limit exceeded' })
+const copilotLimiter = createRateLimiter({ windowMs: 60000, max: 1200, message: 'Co-Pilot rate limit exceeded' })
 
 // ── Health & Readiness ──────────────────────────────────────
 app.get('/livez', (req, res) => res.json({ status: 'alive', time: new Date().toISOString() }))
@@ -213,7 +214,7 @@ app.post('/api/payment/generate-qr', apiLimiter, (req, res) => {
 import { MayOrchestrator } from './agent/mayOrchestrator.js'
 
 // ── QUANNGUYENS AI CSKH INTERACTION API (Blueprint §4, Phase 2, Co-Pilot RPA) ──────
-app.post('/api/chat', apiLimiter, async (req, res) => {
+app.post('/api/chat', copilotLimiter, async (req, res) => {
   try {
     const db = getDb()
     const orchestrator = new MayOrchestrator(db)
@@ -224,6 +225,7 @@ app.post('/api/chat', apiLimiter, async (req, res) => {
       conversationState = {},
       isCopilot = true,
       customerName = null,
+      history = [],
     } = req.body || {}
     
     if (!message || typeof message !== 'string') {
@@ -232,6 +234,9 @@ app.post('/api/chat', apiLimiter, async (req, res) => {
 
     if (customerName) {
       conversationState.customerName = customerName
+    }
+    if (Array.isArray(history) && history.length > 0) {
+      conversationState.history = history
     }
 
     const response = await orchestrator.processMessage({

@@ -364,25 +364,43 @@
     }
 
     // Tin nhắn cuối cùng CHÍNH LÀ KHÁCH HÀNG! -> Khách đang đợi trả lời!
+    // Gom tất cả các tin nhắn liên tiếp của khách ở cuối đoạn chat (phòng trường hợp khách gửi 2-3 tin ngắn)
+    const pendingCustomerMsgs = []
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].isFromCustomer) {
+        pendingCustomerMsgs.unshift(messages[i].text)
+      } else {
+        break
+      }
+    }
+    const combinedCustomerText = pendingCustomerMsgs.join('. ')
+    lastCustomerMessage = combinedCustomerText
+
+    // Trích xuất lịch sử 5 tin nhắn gần nhất
+    const conversationHistory = messages.slice(-5).map((m) => ({
+      role: m.isFromCustomer ? 'user' : 'model',
+      text: m.text,
+    }))
+
     elQuoteHeader.textContent = 'Khách đang chờ trả lời:'
-    elLastMsg.innerHTML = `"${latestCustomerMsg.text}" <br><span style="color: #dc2626; font-weight: 700; font-size: 11px;">⚡ Khách mới nhắn, chưa có phản hồi!</span>`
+    elLastMsg.innerHTML = `"${combinedCustomerText}" <br><span style="color: #dc2626; font-weight: 700; font-size: 11px;">⚡ Khách mới nhắn, chưa có phản hồi!</span>`
 
     // NẾU ĐANG BẬT CHẾ ĐỘ AUTO-PILOT (TỰ ĐỘNG 100%):
-    if (autoPilotEnabled && latestCustomerMsg.text !== lastAutoRepliedMessage && !isCallingAi && !countdownTimer) {
-      triggerAutoPilot(latestCustomerMsg.text)
+    if (autoPilotEnabled && combinedCustomerText !== lastAutoRepliedMessage && !isCallingAi && !countdownTimer) {
+      triggerAutoPilot(combinedCustomerText, conversationHistory)
     }
 
-    return latestCustomerMsg.text
+    return combinedCustomerText
   }
 
   // ── 6. CƠ CHẾ AUTO-PILOT (TỰ ĐỘNG 100% ĐẾM NGƯỢC VÀ GỬI) ───────
-  function triggerAutoPilot(customerText) {
+  function triggerAutoPilot(customerText, history = []) {
     cancelCountdown()
     elCountdownBox.style.display = 'flex'
     elCountdownMsg.textContent = '⚡ Đang gọi QNS phân tích tin nhắn...'
     elProgressFill.style.width = '0%'
 
-    askQns(customerText, (generatedText) => {
+    askQns(customerText, history, (generatedText) => {
       if (!generatedText || !autoPilotEnabled) {
         cancelCountdown()
         return
@@ -422,7 +440,12 @@
   }
 
   // ── 7. GỌI AI QNS ĐỂ TƯ VẤN ────────────────────────────────────
-  function askQns(customPrompt = null, onComplete = null) {
+  function askQns(customPrompt = null, history = [], onComplete = null) {
+    if (typeof history === 'function') {
+      onComplete = history
+      history = []
+    }
+
     if (isCallingAi) return
     isCallingAi = true
 
@@ -436,6 +459,7 @@
         message: promptText,
         customerName: currentCustomerName || null,
         channel: 'copilot',
+        history,
       },
       (res) => {
         isCallingAi = false
@@ -518,28 +542,51 @@
   // ── 9. KÍCH HOẠT GỬI TIN NHẮN (SUBMIT) ───────────────────────────
   function submitSend() {
     const editor = findChatEditor()
-    if (!editor) return
+    if (editor) {
+      editor.focus()
+      const enterDown = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13,
+        bubbles: true,
+        cancelable: true,
+      })
+      const enterUp = new KeyboardEvent('keyup', {
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13,
+        bubbles: true,
+        cancelable: true,
+      })
 
-    editor.focus()
-    const enterDown = new KeyboardEvent('keydown', {
-      key: 'Enter',
-      code: 'Enter',
-      keyCode: 13,
-      which: 13,
-      bubbles: true,
-      cancelable: true,
-    })
-    const enterUp = new KeyboardEvent('keyup', {
-      key: 'Enter',
-      code: 'Enter',
-      keyCode: 13,
-      which: 13,
-      bubbles: true,
-      cancelable: true,
-    })
+      editor.dispatchEvent(enterDown)
+      editor.dispatchEvent(enterUp)
+    }
 
-    editor.dispatchEvent(enterDown)
-    editor.dispatchEvent(enterUp)
+    // Tự động tìm và bấm nút Gửi (Send Button) nếu có trên giao diện
+    setTimeout(() => {
+      const sendBtnSelectors = [
+        'div[aria-label="Nhấn Enter để gửi"]',
+        'div[aria-label="Press Enter to send"]',
+        'div[aria-label="Gửi"]',
+        'div[aria-label="Send"]',
+        'button[aria-label="Gửi"]',
+        'button[aria-label="Send"]',
+        'div[role="button"][aria-label*="gửi"]',
+        'div[role="button"][aria-label*="Gửi"]',
+        'div[role="button"][aria-label*="Send"]',
+        'div[aria-label="Gửi tin nhắn"]',
+      ]
+      for (const sel of sendBtnSelectors) {
+        const btn = document.querySelector(sel)
+        if (btn && btn.offsetParent !== null) {
+          btn.click()
+          break
+        }
+      }
+    }, 120)
   }
 
   function fillAndSend() {
