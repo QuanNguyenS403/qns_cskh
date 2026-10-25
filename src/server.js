@@ -523,7 +523,11 @@ try {
 import { fileURLToPath } from 'url'
 import path from 'path'
 
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
+const isMain =
+  Boolean(process.env.pm_id) ||
+  Boolean(process.env.PM2_HOME) ||
+  (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) ||
+  (process.argv[1] && process.argv[1].endsWith('server.js'))
 
 if (isMain) {
   app.listen(config.PORT, '0.0.0.0', () => {

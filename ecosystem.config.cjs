@@ -3,6 +3,7 @@ module.exports = {
     {
       name: 'quannguyens-ai-cskh',
       script: 'src/server.js',
+      node_args: '--experimental-sqlite',
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,
