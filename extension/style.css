@@ -365,3 +365,77 @@
   opacity: 1;
   transform: translateX(-50%) translateY(4px);
 }
+
+/* Auto-Pilot Switch */
+.qns-switch {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 18px;
+  margin: 0;
+}
+
+.qns-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.qns-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: .2s;
+  border-radius: 18px;
+}
+
+.qns-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .2s;
+  border-radius: 50%;
+}
+
+input:checked + .qns-slider {
+  background-color: #10b981;
+}
+
+input:checked + .qns-slider:before {
+  transform: translateX(14px);
+}
+
+/* Countdown bar */
+.qns-countdown-bar {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #065f46;
+}
+
+.qns-progress-track {
+  width: 100%;
+  height: 4px;
+  background: #d1fae5;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.qns-progress-fill {
+  height: 100%;
+  background: #10b981;
+  width: 100%;
+  transition: width 3s linear;
+}
