@@ -127,7 +127,7 @@ export class MayOrchestrator {
       /^(lô|lo|alo|hi|hello)\s+(shop|ad|bạn|sốp)/i.test(cleanGreeting)
     if (isGreeting) {
       const greetingTarget = conversationState.customerName ? ` bạn ${conversationState.customerName}` : ' bạn'
-      customerMessage = `Dạ QuanNguyenS xin chào${greetingTarget}! Mình là trợ lý AI của QuanNguyenS. Mình luôn có mặt 24/7 để hỗ trợ bạn xem mẫu pijama, tư vấn size theo chiều cao cân nặng, báo giá ưu đãi và hỗ trợ đơn hàng ạ. Bạn đang cần shop hỗ trợ thông tin gì ạ?`
+      customerMessage = `Dạ QuanNguyenS xin chào${greetingTarget}! Mình là trợ lý AI QNS của QuanNguyenS. Mình luôn có mặt 24/7 để hỗ trợ bạn xem mẫu pijama, tư vấn size theo chiều cao cân nặng, báo giá ưu đãi và hỗ trợ đơn hàng ạ. Bạn đang cần shop hỗ trợ thông tin gì ạ?`
       intentCodes.push('greeting')
       nextStep = 'INFORM'
       return this._finalizeOutput({
@@ -160,7 +160,7 @@ export class MayOrchestrator {
 
     // X15: Hỏi là người hay bot
     if (/bạn là người hay bot|người thật hay robot|quannguyens là ai|shop là ai|ai đang chat|phải bot không/i.test(rawText)) {
-      customerMessage = 'Dạ mình là QuanNguyenS, trợ lý AI tư vấn và chăm sóc khách hàng của thương hiệu QuanNguyenS. Mình luôn có mặt 24/7 để hỗ trợ bạn chọn mẫu, xem giá, tư vấn size và theo dõi đơn hàng ạ.'
+      customerMessage = 'Dạ mình là QNS, trợ lý AI tư vấn và chăm sóc khách hàng của thương hiệu QuanNguyenS. Mình luôn có mặt 24/7 để hỗ trợ bạn chọn mẫu, xem giá, tư vấn size và theo dõi đơn hàng ạ.'
       intentCodes.push('ask_identity')
       nextStep = 'INFORM'
       return this._finalizeOutput({

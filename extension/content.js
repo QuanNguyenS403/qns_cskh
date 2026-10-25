@@ -1,6 +1,6 @@
 /**
  * QuanNguyenS CSKH Co-Pilot — Content Script (content.js)
- * Tự động phát hiện tin nhắn, tương tác với AI May và điền nội dung an toàn vào Meta Business Suite / Messenger
+ * Tự động phát hiện tin nhắn, tương tác với AI QNS và điền nội dung an toàn vào Meta Business Suite / Messenger
  */
 
 (() => {
@@ -21,7 +21,7 @@
     <div class="qns-header" id="qns-header-drag">
       <div class="qns-header-title">
         <span class="qns-logo-badge">QNS</span>
-        <span>Co-Pilot May</span>
+        <span>Co-Pilot QNS</span>
         <span class="qns-status-indicator" id="qns-status" title="Đang kiểm tra kết nối server..."></span>
       </div>
       <div class="qns-header-controls">
@@ -57,13 +57,13 @@
         <button class="qns-chip" data-prompt="Xin số tài khoản ngân hàng chuyển khoản">🏦 STK / VietQR</button>
       </div>
 
-      <!-- Khung gợi ý của May -->
+      <!-- Khung gợi ý của QNS -->
       <div class="qns-preview-container">
         <div class="qns-preview-label-row">
-          <span>💡 Gợi ý phản hồi từ May:</span>
+          <span>💡 Gợi ý phản hồi từ QNS:</span>
           <span style="font-size: 10px; font-weight: normal; color: #94a3b8;">Có thể chỉnh sửa</span>
         </div>
-        <textarea class="qns-preview-textarea" id="qns-preview-text" placeholder="Bấm 'Hỏi May' hoặc chọn nhanh ở trên để tạo câu trả lời..."></textarea>
+        <textarea class="qns-preview-textarea" id="qns-preview-text" placeholder="Bấm 'Hỏi QNS' hoặc chọn nhanh ở trên để tạo câu trả lời..."></textarea>
       </div>
 
       <!-- Nút hành động -->
@@ -78,7 +78,7 @@
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
         <button class="qns-btn-secondary" id="qns-btn-ask-ai" style="flex: 1; margin-right: 6px;">
-          ⚡ Hỏi May phân tích lại (Alt+S)
+          ⚡ Hỏi QNS phân tích lại (Alt+S)
         </button>
         <button class="qns-btn-secondary" id="qns-btn-copy" style="padding: 6px 12px;" title="Sao chép vào clipboard">
           📋 Copy
@@ -93,7 +93,7 @@
   pill.style.display = 'none'
   pill.innerHTML = `
     <span class="qns-logo-badge">QNS</span>
-    <span>May Co-Pilot</span>
+    <span>QNS Co-Pilot</span>
     <span class="qns-status-indicator" id="qns-pill-status"></span>
   `
 
@@ -257,29 +257,29 @@
     }
   })
 
-  // ── 6. GỌI AI MAY ĐỂ TƯ VẤN ────────────────────────────────────
-  function askMay(customPrompt = null) {
+  // ── 6. GỌI AI QNS ĐỂ TƯ VẤN ────────────────────────────────────
+  function askQns(customPrompt = null) {
     if (isCallingAi) return
     isCallingAi = true
 
     const promptText = customPrompt || lastExtractedMessage || 'Mua quần áo'
-    elBtnAskAi.innerHTML = '<span class="qns-spinner"></span> Đang hỏi May...'
+    elBtnAskAi.innerHTML = '<span class="qns-spinner"></span> Đang hỏi QNS...'
     elPreview.value = 'Đang phân tích thông số, bảng size và catalog QuanNguyenS...'
 
     chrome.runtime.sendMessage(
       {
-        action: 'CALL_MAY_API',
+        action: 'CALL_QNS_API',
         message: promptText,
         customerName: currentCustomerName || null,
         channel: 'copilot',
       },
       (res) => {
         isCallingAi = false
-        elBtnAskAi.textContent = '⚡ Hỏi May phân tích lại (Alt+S)'
+        elBtnAskAi.textContent = '⚡ Hỏi QNS phân tích lại (Alt+S)'
 
         if (res && res.success && res.customer_message) {
           elPreview.value = res.customer_message
-          showToast('May đã gợi ý xong câu trả lời!')
+          showToast('QNS đã gợi ý xong câu trả lời!')
         } else {
           elPreview.value = `⚠️ Không thể lấy câu trả lời: ${res?.error || 'Lỗi server'}\nHãy đảm bảo bạn đã chạy server D:\\CSKH tại http://localhost:3002!`
         }
@@ -289,14 +289,14 @@
 
   elBtnAskAi.addEventListener('click', () => {
     scanConversation()
-    askMay()
+    askQns()
   })
 
   // Click vào chip gợi ý nhanh
   document.querySelectorAll('.qns-chip').forEach((chip) => {
     chip.addEventListener('click', () => {
       const prompt = chip.getAttribute('data-prompt')
-      askMay(prompt)
+      askQns(prompt)
     })
   })
 
@@ -404,11 +404,11 @@
 
   // ── 10. PHÍM TẮT TOÀN CỤC (HOTKEYS) ───────────────────────────
   window.addEventListener('keydown', (e) => {
-    // Alt + S: Quét & Hỏi May
+    // Alt + S: Quét & Hỏi QNS
     if (e.altKey && (e.key === 's' || e.key === 'S')) {
       e.preventDefault()
       scanConversation()
-      askMay()
+      askQns()
     }
 
     // Alt + A: Điền vào ô chat

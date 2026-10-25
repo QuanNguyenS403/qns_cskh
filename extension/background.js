@@ -17,8 +17,8 @@ async function getServerUrl() {
 
 // Lắng nghe yêu cầu từ Content Script hoặc Popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'CALL_MAY_API') {
-    handleCallMay(request)
+  if (request.action === 'CALL_QNS_API' || request.action === 'CALL_MAY_API') {
+    handleCallQns(request)
       .then(sendResponse)
       .catch((err) => sendResponse({ success: false, error: err.message }))
     return true // Giữ kênh async
@@ -58,7 +58,7 @@ async function checkHealth() {
   }
 }
 
-async function handleCallMay({ message, customerName, channel = 'copilot' }) {
+async function handleCallQns({ message, customerName, channel = 'copilot' }) {
   const baseUrl = await getServerUrl()
   try {
     const controller = new AbortController()
