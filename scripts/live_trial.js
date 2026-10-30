@@ -1,4 +1,4 @@
-﻿import { getDb } from '../src/db/connection.js'
+import { getDb } from '../src/db/connection.js'
 import { GoogleSheetsService } from '../src/integrations/googleSheetsService.js'
 import { googleServiceAccount } from '../src/integrations/googleServiceAccount.js'
 import { MayOrchestrator } from '../src/agent/mayOrchestrator.js'
@@ -112,7 +112,7 @@ async function runLiveTrial() {
   })
   console.log(`   - Set Stillwater niêm yết: ${quote.subtotal.toLocaleString('vi-VN')}đ`)
   console.log(`   - Chiết khấu thanh toán chuyển khoản (5%): -${quote.discount.toLocaleString('vi-VN')}đ`)
-  console.log(`   - Phí vận chuyển: ${quote.shippingFee === 0 ? 'MIỄN PHÍ (Freeship ≥ 500k)' : quote.shippingFee + 'đ'}`)
+  console.log(`   - Phí vận chuyển: ${quote.shipping_fee === 0 ? 'MIỄN PHÍ (Freeship ≥ 500k)' : quote.shipping_fee + 'đ'}`)
   console.log(`   - Tổng thanh toán: ${quote.total.toLocaleString('vi-VN')}đ`)
 
   const qrLink = `https://img.vietqr.io/image/VCB-1050773506-compact2.png?amount=${quote.total}&addInfo=QNS%20DH12345&accountName=NGUYEN%20DUC%20QUAN`

@@ -70,9 +70,15 @@ export class LLMClient {
       parts: [{ text: userMessage }],
     })
 
+    // Đảm bảo Prompt luôn yêu cầu JSON chuẩn khi generationConfig đặt responseMimeType: 'application/json'
+    let effectiveSystemPrompt = systemPrompt || ''
+    if (!effectiveSystemPrompt.includes('customer_message') && !effectiveSystemPrompt.includes('JSON')) {
+      effectiveSystemPrompt += '\n\nLƯU Ý: Phải trả về DUY NHẤT 1 JSON Object chuẩn có cấu trúc: {"customer_message": "câu trả lời cho khách"}'
+    }
+
     const requestBody = {
       system_instruction: {
-        parts: [{ text: systemPrompt }],
+        parts: [{ text: effectiveSystemPrompt }],
       },
       contents,
       generationConfig: {
@@ -99,7 +105,7 @@ export class LLMClient {
       try {
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`
         const controller = new AbortController()
-        const timeoutMs = 12000
+        const timeoutMs = 20000
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
         if (timeoutId && typeof timeoutId.unref === 'function') {
           timeoutId.unref()
@@ -140,28 +146,40 @@ export class LLMClient {
         }
 
         // Xử lý JSON output an toàn
+        let parsed = null
         try {
-          const parsed = JSON.parse(rawText)
-          return parsed
+          parsed = JSON.parse(rawText)
         } catch (jsonErr) {
           const match = rawText.match(/\{[\s\S]*\}/)
           if (match) {
-            return JSON.parse(match[0])
+            try {
+              parsed = JSON.parse(match[0])
+            } catch (e) {}
           }
-          console.warn(`⚠️ [GEMINI ${modelName} OUTPUT NOT VALID JSON]:`, rawText)
-          return {
-            customer_message: rawText,
-            language: 'vi',
-            intent_codes: ['general_inquiry'],
-            next_step: 'INFORM',
-            action_proposals: [],
-            evidence_refs: [],
-            memory_proposals: [],
-            promise_proposals: [],
-            handoff: { required: false, reason_code: null, priority: 'P2' },
-            needs_identity_verification: false,
-            emotion_signal: 'neutral',
+        }
+
+        if (parsed && typeof parsed === 'object') {
+          if (!parsed.customer_message) {
+            parsed.customer_message = parsed.message || parsed.reply || parsed.text || parsed.answer || parsed.response || ''
           }
+          if (parsed.customer_message) {
+            return parsed
+          }
+        }
+
+        console.warn(`⚠️ [GEMINI ${modelName} OUTPUT NOT VALID JSON]:`, rawText)
+        return {
+          customer_message: rawText,
+          language: 'vi',
+          intent_codes: ['general_inquiry'],
+          next_step: 'INFORM',
+          action_proposals: [],
+          evidence_refs: [],
+          memory_proposals: [],
+          promise_proposals: [],
+          handoff: { required: false, reason_code: null, priority: 'P2' },
+          needs_identity_verification: false,
+          emotion_signal: 'neutral',
         }
       } catch (err) {
         lastError = err

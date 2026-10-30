@@ -503,6 +503,46 @@ app.post('/api/admin/killswitch', (req, res) => {
   return res.json({ success: true, status: killSwitch.getStatus() })
 })
 
+import { autoPilotService } from './automation/autoPilotService.js'
+
+// ── PLAYWRIGHT RPA & AUTOPILOT CONTROL API ──────────────────
+app.get('/api/automation/status', (req, res) => {
+  return res.json({ success: true, ...autoPilotService.getStatus() })
+})
+
+app.post('/api/automation/start', async (req, res) => {
+  try {
+    const status = await autoPilotService.start()
+    return res.json({ success: true, message: 'Đã kích hoạt tự động hóa Playwright', status })
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.post('/api/automation/stop', async (req, res) => {
+  try {
+    const status = await autoPilotService.stop()
+    return res.json({ success: true, message: 'Đã dừng tự động hóa Playwright', status })
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.post('/api/automation/pause', (req, res) => {
+  const status = autoPilotService.pause()
+  return res.json({ success: true, message: 'Đã tạm dừng tự động hóa Playwright', status })
+})
+
+app.post('/api/automation/cycle', async (req, res) => {
+  try {
+    const { dryRun = false } = req.body || {}
+    const result = await autoPilotService.runCycle({ dryRun })
+    return res.json({ success: true, ...result })
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
 // Khởi tạo Database Migration và Dữ liệu Chính sách mặc định khi khởi chạy (H9: Fail-closed)
 try {
   const db = getDb()

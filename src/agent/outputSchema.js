@@ -29,10 +29,16 @@ export const EmotionSignalEnum = z.enum([
   'satisfied',
   'wants_to_stop',
   'angry',
-])
+  'positive',
+  'empathetic',
+  'curious',
+  'warm_and_cozy',
+  'excited',
+  'cheerful',
+]).or(z.string()).default('neutral')
 
 export const ActionProposalSchema = z.object({
-  tool: z.string(),
+  tool: z.string().default('none'),
   args: z.record(z.any()).default({}),
   requires_customer_confirmation: z.boolean().default(false),
 })

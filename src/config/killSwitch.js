@@ -23,6 +23,7 @@ class KillSwitchManager {
     this.channelSwitches.set('instagram', true)
     this.channelSwitches.set('threads', true)
     this.channelSwitches.set('zalo', true)
+    this.channelSwitches.set('playwright', true)
   }
 
   /**

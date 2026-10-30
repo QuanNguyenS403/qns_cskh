@@ -1,4 +1,4 @@
-﻿/**
+/**
  * GOOGLE SHEETS LIVE SYNC & POST-DELIVERY CARE SERVICE
  * 
  * Chức năng:
@@ -129,6 +129,23 @@ export class GoogleSheetsService {
         SET status = 'DELIVERED', updated_at = ?
         WHERE order_id = ?
       `).run(now, cleanOrderId)
+    } else if (confirmedBy && confirmedBy.includes('google_sheet_poller')) {
+      // Khi được đồng bộ trực tiếp từ Google Sheet chính thức của shop, lưu lại đơn để chăm sóc chu đáo, không bỏ sót
+      db.prepare(`
+        INSERT INTO orders (
+          order_id, tenant_id, shop_id, customer_id, customer_name, customer_phone,
+          customer_email, shipping_address, items_json, subtotal, shipping_fee,
+          discount, total, currency, status, payment_status, source,
+          policy_version_id, version, created_at, updated_at
+        ) VALUES (?, 'quannguyens_corp', 'quannguyens_pijama', null, ?, ?, null, 'Google Sheet', ?, 0, 0, 0, 0, 'VND', 'DELIVERED', 'UNPAID', 'google_sheet', null, 1, ?, ?)
+      `).run(
+        cleanOrderId,
+        customerName || 'Khách hàng',
+        customerPhone || '',
+        JSON.stringify([{ name: items || 'Sản phẩm QuanNguyenS', quantity: 1 }]),
+        now,
+        now
+      )
     } else {
       console.warn(`⚠️ [GOOGLE SHEETS] Từ chối cập nhật: Đơn hàng ${cleanOrderId} không tồn tại trong hệ thống (H12/C4/D1). Không tạo đơn hàng ma 0đ.`)
       return {
@@ -257,10 +274,7 @@ export class GoogleSheetsService {
     let rows = []
     let fetchMethod = 'CSV Export'
 
-    let targetRange = config.GOOGLE_SHEET_RANGE
-    if (!targetRange || targetRange === 'A1:Z500') {
-      targetRange = 'Đơn Hàng!A1:Z500'
-    }
+    let targetRange = config.GOOGLE_SHEET_RANGE || 'A1:Z1000'
 
     // 1. Thử lấy dữ liệu trực tiếp bằng Google Service Account API (Bảo mật, hoạt động trên Sheet riêng tư)
     const saResult = await googleServiceAccount.fetchSheetRows({ sheetId: config.GOOGLE_SHEET_ID, range: targetRange })
@@ -313,24 +327,114 @@ export class GoogleSheetsService {
     }
 
     let processedCount = 0
+    let syncedOrdersCount = 0
 
     for (const row of rows) {
       // Tìm các cột tương ứng theo cấu trúc thực tế của Sheet
       const orderId = row['ma đon'] || row['ma don'] || row['ma don hang'] || row['order id'] || row['order_id'] || row['ma'] || ''
-      const status = (row['trang thai đh'] || row['trang thai dh'] || row['trang thai'] || row['status'] || row['tinh trang'] || '').toUpperCase()
-      const customerName = row['ten khach'] || row['ten'] || row['khach hang'] || row['customer'] || row['ho ten'] || 'Khách hàng'
-      const customerPhone = row['so đien thoai'] || row['so dien thoai'] || row['sdt'] || row['phone'] || ''
-      const items = (row['ten san pham'] ? (row['ten san pham'] + (row['bien the'] ? ' - ' + row['bien the'] : '')) : '') || row['san pham'] || row['items'] || row['don hang'] || ''
+      if (!orderId) continue
+
+      const cleanOrderId = String(orderId).trim().toUpperCase()
+      const statusRaw = row['trang thai đh'] || row['trang thai dh'] || row['trang thai'] || row['status'] || row['tinh trang'] || ''
+      const status = statusRaw.toUpperCase()
+      const customerName = row['ten khach'] || row['ten'] || row['khach hang'] || row['customer'] || row['ho ten'] || row['nguoi nhan'] || 'Khách hàng'
+      const customerPhone = row['so đien thoai'] || row['so dien thoai'] || row['sdt'] || row['phone'] || row['dien thoai'] || ''
+      const items = (row['ten san pham'] ? (row['ten san pham'] + (row['bien the'] ? ' - ' + row['bien the'] : '')) : '') || row['san pham'] || row['items'] || row['don hang'] || row['hang'] || ''
       const channel = (row['nguon'] || row['kenh'] || row['channel'] || 'messenger').toLowerCase()
       const channelSenderId = row['id kenh'] || row['sender id'] || row['sender_id'] || row['id_khach'] || row['facebook_id'] || ''
-      const trackingCode = row['ma van đon'] || row['ma van don'] || row['tracking'] || ''
-      const carrier = row['đon vi van chuyen'] || row['don vi van chuyen'] || row['carrier'] || 'Viettel Post'
+      const trackingCode = row['ma van đon'] || row['ma van don'] || row['tracking'] || row['van don'] || ''
+      const carrier = row['đon vi van chuyen'] || row['don vi van chuyen'] || row['carrier'] || row['dvvc'] || 'Viettel Post'
+      const address = row['dia chi'] || row['đia chi'] || row['address'] || row['noi nhan'] || 'Google Sheet'
+      const totalAmount = parseInt(String(row['tong tien'] || row['tong'] || row['thanh tien'] || row['gia tri'] || '0').replace(/\D/g, '')) || 0
+
+      // ── ĐỒNG BỘ TRẠNG THÁI THANH TOÁN (CỘT "TT" TRÊN GOOGLE SHEET) ───────
+      const paymentStatusRaw = (
+        row['tt'] ||
+        row['thanh toan'] ||
+        row['trang thai tt'] ||
+        row['bien dong so du'] ||
+        row['chuyen khoan'] ||
+        row['da thanh toan'] ||
+        ''
+      ).trim()
+
+      const isPaidOnSheet =
+        !/unpaid|chưa|chua|pending|awaiting|claimed/i.test(paymentStatusRaw) &&
+        /\bpaid\b|^paid$|đã tt|da tt|đã thanh toán|da thanh toan|đã nhận|da nhan|đã ck|\bck\b|thành công|thanh toan roi/i.test(
+          paymentStatusRaw
+        )
 
       // Kiểm tra xem trạng thái có phải là ĐÃ GIAO / ĐÃ NHẬN thành công không
       const isDelivered = /ĐÃ GIAO|DA GIAO|ĐÃ NHẬN|DA NHAN|GIAO THÀNH CÔNG|GIAO THANH CONG|DELIVERED|THÀNH CÔNG/i.test(status)
 
-      if (orderId && isDelivered) {
-        const cleanOrderId = String(orderId).trim().toUpperCase()
+      // Đồng bộ đơn hàng vào CSDL để AI nắm bắt toàn diện dữ liệu khách đặt hàng (tránh bỏ sót)
+      const now = new Date().toISOString()
+      const existingOrder = db.prepare(`SELECT * FROM orders WHERE order_id = ?`).get(cleanOrderId)
+      const orderDbStatus = isDelivered ? 'DELIVERED' : (status.includes('GIAO') || status.includes('ĐANG') ? 'SHIPPING' : (existingOrder ? existingOrder.status : 'CONFIRMED'))
+      const orderPaymentStatus = isPaidOnSheet ? 'PAID' : (existingOrder ? existingOrder.payment_status : 'UNPAID')
+
+      if (!existingOrder) {
+        db.prepare(`
+          INSERT INTO orders (
+            order_id, tenant_id, shop_id, customer_id, customer_name, customer_phone,
+            customer_email, shipping_address, items_json, subtotal, shipping_fee,
+            discount, total, currency, status, payment_status, source,
+            policy_version_id, version, created_at, updated_at
+          ) VALUES (?, 'quannguyens_corp', 'quannguyens_pijama', null, ?, ?, null, ?, ?, ?, 0, 0, ?, 'VND', ?, ?, 'google_sheet', null, 1, ?, ?)
+        `).run(
+          cleanOrderId,
+          customerName,
+          customerPhone,
+          address,
+          JSON.stringify([{ name: items || 'Sản phẩm QuanNguyenS', quantity: 1 }]),
+          totalAmount,
+          totalAmount,
+          orderDbStatus,
+          orderPaymentStatus,
+          now,
+          now
+        )
+        syncedOrdersCount++
+        console.log(`📝 [GOOGLE SHEETS SYNC] Đã lưu thông tin khách đặt hàng: #${cleanOrderId} (${customerName} - ${customerPhone}) - TT: ${orderPaymentStatus}`)
+      } else {
+        const needStatusUpdate = existingOrder.status !== orderDbStatus
+        const needPhoneUpdate = !existingOrder.customer_phone && customerPhone
+        const needPaymentUpdate = existingOrder.payment_status !== 'PAID' && isPaidOnSheet
+
+        if (needStatusUpdate || needPhoneUpdate || needPaymentUpdate) {
+          db.prepare(`
+            UPDATE orders
+            SET status = ?,
+                payment_status = ?,
+                customer_phone = COALESCE(NULLIF(customer_phone, ''), ?),
+                updated_at = ?
+            WHERE order_id = ?
+          `).run(orderDbStatus, orderPaymentStatus, customerPhone, now, cleanOrderId)
+
+          if (needPaymentUpdate) {
+            console.log(`💰 [GOOGLE SHEETS PAYMENT] Đơn #${cleanOrderId} (${customerName}) được cập nhật ĐÃ THANH TOÁN theo cột TT ("${paymentStatusRaw}")!`)
+            try {
+              db.prepare(`
+                INSERT INTO payments (
+                  id, tenant_id, shop_id, order_id, gateway, transaction_id,
+                  amount, currency, status, paid_at, raw_payload, created_at, updated_at
+                ) VALUES (?, 'quannguyens_corp', 'quannguyens_pijama', ?, 'google_sheet_tt', ?, ?, 'VND', 'SETTLED', ?, ?, ?, ?)
+              `).run(
+                `PAY-SHEET-${Date.now()}-${cleanOrderId}`,
+                cleanOrderId,
+                `TX-SHEET-${cleanOrderId}`,
+                totalAmount || existingOrder.total || 0,
+                now,
+                JSON.stringify({ row, source: 'google_sheet_tt', paymentStatusRaw }),
+                now,
+                now
+              )
+            } catch {}
+          }
+        }
+      }
+
+      if (isDelivered) {
         const businessKey = `checkin:${cleanOrderId}`
 
         // Kiểm tra xem đã xử lý chưa

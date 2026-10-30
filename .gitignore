@@ -3,6 +3,10 @@ node_modules/
 .system_generated/
 data/*.db*
 !data/.gitkeep
+data/playwright_profile/
+data/playwright_storage_state.json
+data/autopilot_state.json
+data/*.json
 .env
 .env.local
 coverage/

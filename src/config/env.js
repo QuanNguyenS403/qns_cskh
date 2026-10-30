@@ -166,5 +166,18 @@ export const config = {
   QUIET_HOURS_END: process.env.QUIET_HOURS_END || '09:00',
   MARKETING_MAX_7D: parseInt(process.env.MARKETING_MAX_7D || '1', 10),
   MARKETING_MAX_30D: parseInt(process.env.MARKETING_MAX_30D || '3', 10),
+
+  // Đơn vị vận chuyển (GHTK / GHN / ViettelPost)
+  SHIPPING_CARRIER: process.env.SHIPPING_CARRIER || 'GHTK',
+  SHIPPING_CARRIER_TOKEN: process.env.SHIPPING_CARRIER_TOKEN || 'CB70017EF1D541671B9D070CD5812C02',
+  SHIPPING_SHOP_ID: process.env.SHIPPING_SHOP_ID || '',
+
+  // Playwright RPA & Tu dong hoa trinh duyet Meta Business Suite / Fanpage / Instagram
+  PLAYWRIGHT_HEADLESS: process.env.PLAYWRIGHT_HEADLESS !== 'false',
+  PLAYWRIGHT_USER_DATA_DIR: process.env.PLAYWRIGHT_USER_DATA_DIR || path.resolve(process.cwd(), 'data/playwright_profile'),
+  PLAYWRIGHT_STORAGE_STATE_PATH: process.env.PLAYWRIGHT_STORAGE_STATE_PATH || path.resolve(process.cwd(), 'data/playwright_storage_state.json'),
+  PLAYWRIGHT_POLL_INTERVAL_MS: parseInt(process.env.PLAYWRIGHT_POLL_INTERVAL_MS || '6000', 10),
+  PLAYWRIGHT_AUTO_REPLY: process.env.PLAYWRIGHT_AUTO_REPLY !== 'false',
+  PLAYWRIGHT_TYPING_DELAY_MS: parseInt(process.env.PLAYWRIGHT_TYPING_DELAY_MS || '35', 10),
 }
 

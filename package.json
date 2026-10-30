@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "quannguyens-ai-cskh",
   "version": "1.0.0",
   "description": "QuanNguyenS 24/7 AI CSKH & Multi-Channel Customer Lifecycle System",
@@ -12,12 +12,16 @@
     "pm2:start": "pm2 start ecosystem.config.cjs",
     "pm2:restart": "pm2 restart ecosystem.config.cjs",
     "pm2:stop": "pm2 stop ecosystem.config.cjs",
-    "pm2:logs": "pm2 logs quannguyens-ai-cskh"
+    "pm2:logs": "pm2 logs quannguyens-ai-cskh",
+    "playwright:install": "playwright install chromium",
+    "playwright:login": "node scripts/playwright_login.js",
+    "playwright:start": "node scripts/autopilot_supervisor.js",
+    "playwright:worker": "node scripts/playwright_worker.js",
+    "playwright:dry-run": "node scripts/playwright_test_scan.js"
   },
   "keywords": [
     "cskh",
     "ai-agent",
-    
     "quannguyens",
     "ecommerce"
   ],
@@ -28,6 +32,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "helmet": "^8.0.0",
+    "playwright": "^1.64.1",
     "zod": "^3.24.2"
   },
   "engines": {

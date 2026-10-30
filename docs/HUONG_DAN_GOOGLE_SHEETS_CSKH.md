@@ -64,7 +64,7 @@ Phương án này cho phép bạn giữ file Google Sheet ở chế độ **Riê
    ```
 7. **Chia sẻ Sheet cho Bot:**
    - Mở file `.json` vừa tải về, copy dòng `client_email` (dạng `quannguyens-sheet-reader@xxx.iam.gserviceaccount.com`).
-   - Mở Google Sheet `1TnpncVKRa66Rjb_IFq_-W5yAWS-Lyvb8sQYBjHQCJec` > Bấm **Chia sẻ (Share)** > Dán email trên vào > Chọn quyền **Người xem (Viewer)** > Bấm **Gửi**.
+   - Mở Google Sheet `1nHKbTYU2woXvBaf5m5B7w4N4DO7MLACp0gyb32BQyPg` > Bấm **Chia sẻ (Share)** > Dán email trên vào > Chọn quyền **Người xem (Viewer)** > Bấm **Gửi**.
 8. Xong! Hệ thống AI Agent sẽ dùng chữ ký số RS256 để truy cập trực tiếp Google Sheet của bạn một cách bảo mật tuyệt đối 24/7.
 
 ---

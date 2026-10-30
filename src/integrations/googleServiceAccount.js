@@ -193,6 +193,12 @@ export class GoogleServiceAccount {
       })
 
       if (!response.ok) {
+        // Fallback: nếu lỗi 400 do tên tab (range có chứa '!') không khớp, tự động thử lại với sheet đầu tiên A1:Z1000
+        if (response.status === 400 && range.includes('!')) {
+          console.warn(`⚠️ [GOOGLE SHEETS] Không tìm thấy tab '${range.split('!')[0]}', chuyển sang đọc sheet đầu tiên (A1:Z1000)...`)
+          return this.fetchSheetRows({ sheetId, range: 'A1:Z1000', fetchImpl })
+        }
+
         const errorData = await response.json().catch(() => ({}))
         const errorMessage = errorData.error?.message || `HTTP ${response.status}`
 

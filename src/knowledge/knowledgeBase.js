@@ -17,6 +17,7 @@ const SYNONYMS = {
   'pizama': 'pijama',
   'quan ao ngu': 'pijama',
   'bộ ngủ': 'pijama',
+  'set ngu': 'pijama',
   'chat lieu': 'vai',
   'chất liệu': 'vai',
   'chất vải': 'vai',
@@ -32,6 +33,112 @@ const SYNONYMS = {
   'bao quan': 'giat ui',
   'bảo quản': 'giat ui',
   'giặt đồ': 'giat ui',
+  'lua': 'chat lieu vai lua phi bong',
+  'lụa': 'chất liệu vải lụa phi bóng',
+  'dui': 'chat lieu vai dui tho',
+  'đũi': 'chất liệu vải đũi thô',
+  'tang': 'qua tang sinh nhat ban gai nguoi yeu',
+  'tặng': 'quà tặng sinh nhật bạn gái người yêu',
+  'beo': 'che khuyet diem phom suong rong',
+  'béo': 'che khuyết điểm phom suông rộng',
+  'gay': 'om ton dang phom thanh lich',
+  'gầy': 'ốm tôn dáng phom thanh lịch',
+  'mua he': 'mat me thoang khi tham hut mo hoi',
+  'mùa hè': 'mát mẻ thoáng khí thấm hút mồ hôi',
+  'mua dong': 'am ap thu dong',
+  'mùa đông': 'ấm áp thu đông',
+  'ngu ngon': 'thu gian thoai mai de chiu',
+  'ngủ ngon': 'thư giãn thoải mái dễ chịu',
+}
+
+/**
+ * Bảng từ điển giải mã ngôn ngữ Gen Z, Teen Code & Từ viết tắt mạng xã hội
+ */
+export const GENZ_SLANG_MAP = {
+  'ib': 'inbox tư vấn nhắn tin',
+  'inbox': 'nhắn tin tư vấn',
+  'sz': 'size kích cỡ',
+  'szs': 'sizes kích cỡ',
+  'rep': 'trả lời phản hồi',
+  'rep ib': 'trả lời tin nhắn',
+  'k': 'không',
+  'ko': 'không',
+  'khong': 'không',
+  'hok': 'không',
+  'khom': 'không',
+  'khum': 'không',
+  'hông': 'không',
+  'hong': 'không',
+  'ak': 'ạ',
+  'ạk': 'ạ',
+  'nha': 'nhé',
+  'nhe': 'nhé',
+  'he': 'hả',
+  'ha': 'hả',
+  'sop': 'shop',
+  'sốp': 'shop',
+  'shopp': 'shop',
+  'ad': 'shop',
+  'e': 'em',
+  'mik': 'mình',
+  'mk': 'mình',
+  'cx': 'cũng',
+  'bt': 'biết',
+  'dc': 'được',
+  'đc': 'được',
+  'nhg': 'nhưng',
+  'lm': 'làm',
+  'wa': 'quá',
+  'qa': 'quá',
+  'thui': 'thôi',
+  'lun': 'luôn',
+  'luon': 'luôn',
+  'oki': 'đồng ý ok',
+  'okie': 'đồng ý ok',
+  'ok': 'đồng ý ok',
+  'đẹp xỉu': 'rất đẹp xuất sắc',
+  'xinh xỉu': 'rất xinh xắn',
+  'cưng xỉu': 'rất dễ thương đáng yêu',
+  'keo lì': 'rất thu hút cuốn hút',
+  'mlem': 'rất đẹp quyến rũ',
+  'cháy phố': 'nổi bật phong cách',
+  'vibe': 'phong cách cảm giác',
+  'chill': 'thư thái dễ chịu êm ái',
+  'pick': 'chọn mua',
+  'pass': 'nhượng lại',
+  'deal': 'giá ưu đãi',
+  'sale': 'giảm giá khuyến mãi',
+  'ship hỏa tốc': 'giao hàng siêu nhanh',
+  'gấp lém': 'rất gấp khẩn trương',
+  'trộm vía': 'may mắn dễ thương',
+  'hạt dẻ': 'giá cả phải chăng',
+  'xịn đét': 'chất lượng rất tốt',
+  'đỉnh chóp': 'chất lượng tuyệt vời',
+  'đỉnh nóc': 'chất lượng đỉnh cao',
+  'kịch trần': 'tối đa tốt nhất',
+  'vừa in': 'vừa vặn chuẩn xác',
+  'stk': 'số tài khoản ngân hàng',
+  'ck': 'chuyển khoản ngân hàng',
+  'cod': 'thanh toán khi nhận hàng',
+  'fl': 'theo dõi follow',
+  'ét ô ét': 'cần hỗ trợ khẩn cấp',
+  'sos': 'cần hỗ trợ khẩn cấp',
+  'outfit': 'trang phục bộ đồ',
+  'chất lừ': 'chất lượng phong cách đẹp',
+}
+
+/**
+ * Giải mã chuỗi chứa từ viết tắt / tiếng lóng Gen Z thành nghĩa tường minh
+ */
+export function decodeGenZAndSlang(text) {
+  if (!text) return ''
+  let result = text
+  for (const [slang, meaning] of Object.entries(GENZ_SLANG_MAP)) {
+    const escaped = slang.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const regex = new RegExp(`(^|\\s|[.,!?;~])${escaped}($|\\s|[.,!?;~])`, 'gi')
+    result = result.replace(regex, `$1${meaning}$2`)
+  }
+  return result
 }
 
 /**
@@ -186,14 +293,18 @@ export class KnowledgeBase {
   static search({ query, category = null, sku = null, limit = 3 }) {
     if (!query && !sku && !category) return []
 
+    const decodedQuery = decodeGenZAndSlang(query || '')
     const normalizedQuery = normalizeVietnamese(query || '')
-    const queryTokens = normalizedQuery.split(' ').filter((t) => t.length > 1)
+    const normalizedDecodedQuery = normalizeVietnamese(decodedQuery)
 
-    // Mở rộng bằng từ đồng nghĩa
-    const expandedTokens = new Set(queryTokens)
+    const queryTokens = normalizedQuery.split(' ').filter((t) => t.length > 1)
+    const decodedTokens = normalizedDecodedQuery.split(' ').filter((t) => t.length > 1)
+
+    // Mở rộng bằng từ đồng nghĩa và tiếng lóng Gen Z
+    const expandedTokens = new Set([...queryTokens, ...decodedTokens])
     for (const [key, replacement] of Object.entries(SYNONYMS)) {
       const normKey = normalizeVietnamese(key)
-      if (normalizedQuery.includes(normKey)) {
+      if (normalizedQuery.includes(normKey) || normalizedDecodedQuery.includes(normKey)) {
         normalizeVietnamese(replacement).split(' ').forEach((t) => expandedTokens.add(t))
       }
     }
