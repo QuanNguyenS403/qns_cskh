@@ -55,9 +55,9 @@ services:
       - key: LLM_PROVIDER
         value: gemini
       - key: GEMINI_MODEL
-        value: gemini-3.5-flash-lite
+        value: gemini-3.8-flash
       - key: GEMINI_FALLBACK_MODEL
-        value: gemini-flash-lite-latest
+        value: gemini-3.5-flash
 
       # ── Meta Platform — API Graph phiên bản cố định ───────────────────────
       - key: META_GRAPH_VERSION

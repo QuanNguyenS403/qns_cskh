@@ -21,8 +21,9 @@ export class LLMClient {
     this.candidateModels = [
       this.model,
       this.fallbackModel,
-      'gemini-3.1-flash-lite',
+      'gemini-3.5-flash-lite',
       'gemini-3.5-flash',
+      'gemini-3.1-flash-lite',
     ].filter((val, idx, self) => val && self.indexOf(val) === idx)
 
     // Bảng theo dõi cooldown khi bị rate limit (429)
@@ -105,7 +106,7 @@ export class LLMClient {
       try {
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`
         const controller = new AbortController()
-        const timeoutMs = 20000
+        const timeoutMs = 12000
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
         if (timeoutId && typeof timeoutId.unref === 'function') {
           timeoutId.unref()
@@ -138,7 +139,9 @@ export class LLMClient {
 
         const data = await response.json()
         const candidate = data.candidates?.[0]
-        const rawText = candidate?.content?.parts?.find((p) => typeof p.text === 'string')?.text || candidate?.content?.parts?.[0]?.text
+        const rawPart = candidate?.content?.parts?.find((p) => typeof p.text === 'string' && !p.thought)
+          || candidate?.content?.parts?.find((p) => typeof p.text === 'string')
+        const rawText = rawPart?.text || candidate?.content?.parts?.[0]?.text
 
         if (!rawText) {
           console.warn(`⚠️ [GEMINI ${modelName} RESPONSE EMPTY]`)
