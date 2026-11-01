@@ -25,6 +25,9 @@ module.exports = {
       kill_timeout: 5000,
       wait_ready: false,
     },
+    // quannguyens-playwright-worker da duoc go bo de chuyen sang van hanh Cloud 24/7 qua Botcake + Render (khong ton RAM laptop va khong can mo may)
+    // Neu can bat lai Playwright cuc bo: bo comment khoi ben duoi
+    /*
     {
       name: 'quannguyens-playwright-worker',
       script: 'scripts/playwright_worker.js',
@@ -46,5 +49,6 @@ module.exports = {
       time: true,
       kill_timeout: 10000,
     },
+    */
   ],
 }

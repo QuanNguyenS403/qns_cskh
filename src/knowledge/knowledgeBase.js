@@ -277,6 +277,43 @@ export const KNOWLEDGE_DOCS = [
       - Đối với nhu cầu đổi size thông thường: Hỗ trợ đổi size trong vòng 7 ngày kể từ khi nhận hàng (sản phẩm còn nguyên tem mác, chưa qua sử dụng/giặt ủi).
     `.trim(),
   },
+
+  // 7. Khối 7: Tiếng nói & Insight khách hàng nữ khi mua Pyjama (Voice of Customer Insights)
+  {
+    doc_id: 'voice_of_customer_insights',
+    version: 'v1.0',
+    category: 'customer_insight',
+    title: 'Insight & Băn khoăn tế nhị của phụ nữ khi mua Pyjama (Khối 7)',
+    tags: ['insight', 'tam ly', 'vai lua', 'phi bong', 'nong bi', 'mun lung', 'ho nguc', 'dau ti', 'nhu hoa', 'giat may', 'bung to', 'bap tay to', 'dung quan', 'quiet luxury', 'effortless chic', 'shipper'],
+    content: `
+      Tổng hợp các nỗi sợ và tâm lý ẩn sâu của khách hàng nữ khi mua pyjama cao cấp:
+      1. Nỗi sợ vải bí nóng & mụn lưng: Khách từng bị ám ảnh bởi vải phi bóng pha nilon rẻ tiền gây hầm bí, toát mồ hôi và nổi mụn lưng ban đêm. Pijama QNS dệt từ sợi tự nhiên mật độ sợi cao, thoáng khí, mát lạnh khi chạm da và thấm hút mồ hôi vượt trội.
+      2. Độ kín đáo khi ở chung gia đình: Về nhà phụ nữ muốn cởi bỏ áo lót nịt ngực nhưng sợ lộ đầu ngực/nhũ hoa trước bố mẹ chồng, người lớn hoặc khách đến nhà. Thiết kế cổ ve lật 2 lớp may ép và túi ngực đặt đúng vị trí giúp che khéo hoàn toàn, vừa thoải mái vừa đoan trang lịch sự.
+      3. Lười giặt tay, sợ hỏng khi giặt máy: Sợ vải nhăn nhúm, bai dão hoặc xù lông. Giải pháp: Vải dệt sợi đôi chống xước, tặng kèm túi giặt lụa chuyên dụng cho máy giặt, giặt chế độ nhẹ phơi bóng râm là suôn mượt tự nhiên.
+      4. Tự ti vóc dáng (bụng dưới to, bắp tay to sau sinh): Sợ vải ôm lộ ngấn mỡ. Thiết kế rập phom suông A-line chuẩn châu Âu, tay lỡ che trọn bắp tay, cạp lưng cao bọc lụa êm ái giấu bụng dưới hoàn hảo.
+      5. Đáy đũng sâu & cạp chun êm ái: Không bị bó kích khi nằm co chân, hạ đũng sâu thêm 3-4cm, bản chun cotton bọc lụa chống siết đỏ da.
+      6. Xu hướng Ready-to-Open-Door & Quiet Luxury: Thích tông màu trung tính sang trọng (Champagne, Sand, Pearl White, French Blue), mặc ở nhà thanh lịch tự tin khi shipper gọi cửa hoặc khách ghé thăm đột xuất.
+    `.trim(),
+  },
+
+  // 8. Khối 8: Kho kịch bản CSKH, bẻ gãy từ chối & chốt đơn đỉnh cao (Closing & Objection Scripts)
+  {
+    doc_id: 'objection_handling_and_closing_scripts',
+    version: 'v1.0',
+    category: 'cskh_scripts',
+    title: 'Kịch bản bẻ gãy từ chối, câu khen tinh tế & kỹ thuật chốt đơn xuống tiền (Khối 8)',
+    tags: ['kich ban', 'be gay tu choi', 'che dat', '180k', 'suy nghi them', 'chot don', 'khen dang', 'vietqr', 'giam 5%', 'freeship', 'thiep cam on', 'unboxing', 'self love'],
+    content: `
+      Bộ kịch bản thực chiến bẻ gãy rào cản tâm lý và chốt đơn tự nhiên:
+      1. Bẻ gãy chê đắt (so sánh hàng rẻ 150k-180k): Dùng đòn bẩy Cost-per-wear: Bộ đồ ngủ tiếp xúc với da suốt 8 tiếng mỗi đêm trong 2-3 năm, tính ra chưa tới 1.000đ/đêm để nâng niu giấc ngủ quý tộc và bảo vệ da lưng không bị mụn so với hàng phi nilon nóng bí.
+      2. Bẻ gãy "Để chị suy nghĩ thêm / hỏi chồng": Tôn trọng khách hàng thong thả cân nhắc + thông báo xưởng chỉ dệt giới hạn 25 bộ chuẩn chỉ từng đường kim mũi chỉ, kho chỉ còn đúng 2 set cuối cùng -> xin phép tạm giữ suất ưu đãi kèm quà tặng túi giặt cho chị trong 2 tiếng để không bị lỡ size yêu thích.
+      3. Bẻ gãy rủi ro đổi trả size số: Cam kết hỗ trợ 1-đổi-1 tận cửa nhà qua Viettel Post, shipper mang hàng mới đến đổi tận tay, khách không phải mang ra bưu cục và shop hỗ trợ tận tâm.
+      4. Khen ngợi tinh tế (Flattery): Tôn vinh vóc dáng tỷ lệ vàng, khen gu thẩm mỹ tối giản Quiet Luxury nịnh da, khẳng định phụ nữ hiện đại biết yêu chiều bản thân (Self-love).
+      5. Kỹ thuật chốt 2 chọn 1 (Alternative Close): Gợi ý chọn giữa 2 màu (ví dụ Kem Tây kiêu kỳ hay Xanh Forest thanh lịch) hoặc chọn thời điểm nhận hàng (sáng mai hay chiều mai) để đóng hộp kịp gửi ngay.
+      6. Đòn bẩy thanh toán VietQR: Khách quét mã VietQR tự động giảm ngay 5% trực tiếp và được Freeship toàn quốc cho đơn từ 500k.
+      7. Nghệ thuật Unboxing & Thiệp quà: Đóng gói hộp quà cứng nam châm sang trọng, nơ lụa, kèm thiệp cảm ơn viết tay tôn vinh nét đẹp và năng lượng an lành của người phụ nữ.
+    `.trim(),
+  },
 ]
 
 export class KnowledgeBase {
