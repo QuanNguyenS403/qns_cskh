@@ -2,6 +2,7 @@ import { BrowserManager } from './browserManager.js'
 import { MetaBusinessSuiteAgent } from './metaBusinessSuiteAgent.js'
 import { config } from '../config/env.js'
 import { killSwitch } from '../config/killSwitch.js'
+import { alertNotifier } from '../security/alertNotifier.js'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -34,6 +35,8 @@ export class AutoPilotService {
     }
 
     this.hourlyReplyTimestamps = []
+    this.checkedSnippets = new Map() // Cooldown chống click lặp hội thoại không cần trả lời
+    this.consecutiveNotLoggedIn = 0
   }
 
   /**
@@ -58,6 +61,7 @@ export class AutoPilotService {
           sentInLastHour: this.hourlyReplyTimestamps.length,
           maxPerHour: this.maxRepliesPerHour,
         },
+        activeAlert: alertNotifier.getActiveAlert(),
         updatedAt: new Date().toISOString(),
       }
       fs.writeFileSync(this.stateFilePath, JSON.stringify(stateData, null, 2), 'utf8')
@@ -100,19 +104,19 @@ export class AutoPilotService {
       const loginCheck = await this.metaAgent.checkLoginStatus(page)
       if (loginCheck.isCheckpoint) {
         this.state = 'WAITING_FOR_VERIFICATION'
-        console.error('\n🚨 ==============================================================================')
-        console.error('🚨 [CẢNH BÁO BẢO MẬT META] PHÁT HIỆN YÊU CẦU XÁC MINH DANH TÍNH / CHECKPOINT!')
-        console.error(`🚨 Đường dẫn hiện tại: ${loginCheck.currentUrl}`)
-        console.error('🚨 AI ĐÃ TỰ ĐỘNG ĐÓNG BĂNG TOÀN BỘ THAO TÁC (KHÔNG CLICK / KHÔNG GỬI PHÍM).')
-        console.error('👉 Vui lòng mở trình duyệt và hoàn tất xác minh danh tính tài khoản Meta.')
-        console.error('🚨 Hệ thống đang ở chế độ chờ an toàn và sẽ TỰ ĐỘNG TIẾP TỤC ngay khi bạn xác minh xong.')
-        console.error('==============================================================================\n')
+        await alertNotifier.sendCriticalAlert({
+          code: 'META_CHECKPOINT_REQUIRED',
+          title: 'Meta yêu cầu Xác minh danh tính / Checkpoint',
+          message: `AI đã tự động đóng băng thao tác an toàn tại ${loginCheck.currentUrl}. Vui lòng mở trình duyệt xác minh để AI tự chạy tiếp.`,
+          details: loginCheck,
+        })
       } else if (!loginCheck.isLoggedIn) {
         console.warn('⚠️ [AUTOPILOT CẢNH BÁO]:', loginCheck.reason)
         console.warn('👉 Hãy chạy "npm run playwright:login" để đăng nhập tài khoản trước.')
         this.state = 'RUNNING'
       } else {
         this.state = 'RUNNING'
+        alertNotifier.clearAlert()
       }
 
       this.stats.startTime = new Date().toISOString()
@@ -210,19 +214,15 @@ export class AutoPilotService {
 
       // ── PHÁT HIỆN YÊU CẦU XÁC MINH META (CHECKPOINT / 2FA) ────────────────
       if (loginCheck.isCheckpoint) {
-        const wasWaiting = this.state === 'WAITING_FOR_VERIFICATION'
         this.state = 'WAITING_FOR_VERIFICATION'
         this.saveState()
 
-        if (!wasWaiting) {
-          console.error('\n🚨 ==============================================================================')
-          console.error('🚨 [CẢNH BÁO BẢO MẬT META] PHÁT HIỆN YÊU CẦU XÁC MINH DANH TÍNH / CHECKPOINT!')
-          console.error(`🚨 Đường dẫn hiện tại: ${loginCheck.currentUrl}`)
-          console.error('🚨 AI ĐÃ TỰ ĐỘNG ĐÓNG BĂNG TOÀN BỘ THAO TÁC (KHÔNG CLICK / KHÔNG GỬI PHÍM).')
-          console.error('👉 Vui lòng mở trình duyệt và hoàn tất xác minh danh tính tài khoản Meta.')
-          console.error('🚨 Hệ thống đang ở chế độ chờ an toàn và sẽ TỰ ĐỘNG TIẾP TỤC ngay khi bạn xác minh xong.')
-          console.error('==============================================================================\n')
-        }
+        await alertNotifier.sendCriticalAlert({
+          code: 'META_CHECKPOINT_REQUIRED',
+          title: 'Meta yêu cầu Xác minh danh tính / Checkpoint',
+          message: `AI đã tự động đóng băng toàn bộ thao tác tại ${loginCheck.currentUrl}. Vui lòng mở trình duyệt xác minh để AI tự động tiếp tục.`,
+          details: loginCheck,
+        })
         return { skipped: true, reason: 'WAITING_FOR_HUMAN_VERIFICATION', details: loginCheck }
       }
 
@@ -234,13 +234,27 @@ export class AutoPilotService {
         console.log('==============================================================================\n')
         this.state = 'RUNNING'
         this.stats.consecutiveErrors = 0
+        this.consecutiveNotLoggedIn = 0
+        alertNotifier.clearAlert()
         this.saveState()
       }
 
       if (!loginCheck.isLoggedIn) {
+        this.consecutiveNotLoggedIn++
+        if (this.consecutiveNotLoggedIn >= 4 && String(loginCheck.currentUrl || '').toLowerCase().includes('login')) {
+          await alertNotifier.sendCriticalAlert({
+            code: 'META_SESSION_EXPIRED',
+            title: 'Phiên đăng nhập Meta Business Suite đã hết hạn',
+            message: 'Tài khoản Meta đã bị đăng xuất. Vui lòng chạy "npm run playwright:login" để đăng nhập lại.',
+            details: loginCheck,
+          })
+        }
         this.saveState()
         return { skipped: true, reason: 'NOT_LOGGED_IN', details: loginCheck }
       }
+
+      this.consecutiveNotLoggedIn = 0
+      alertNotifier.clearAlert()
 
       // 1. Quét cuộc hội thoại đang mở hiện tại
       let processedCurrent = null
@@ -257,15 +271,31 @@ export class AutoPilotService {
         console.warn('⚠️ [AUTOPILOT RATE LIMIT] Đã đạt giới hạn tối đa số tin nhắn/giờ. Tạm dừng gửi.')
       }
 
-      // 2. Quét danh sách các hội thoại chưa đọc khác ở thanh bên
+      // 2. Quét danh sách các hội thoại chưa đọc hoặc khách nhắn cuối ở thanh bên
       const conversationList = await this.metaAgent.scanConversationList(page)
-      const unreadList = conversationList.filter((c) => c.isUnread)
+      const nowMs = Date.now()
+      const pendingList = conversationList.filter((c) => {
+        if (c.isUnread) return true
+        if (!c.awaitingReply) return false
+        const key = `${c.customerName || c.index}::${c.previewLine || c.snippet}`
+        const lastChecked = this.checkedSnippets.get(key)
+        return !lastChecked || nowMs - lastChecked > 300000 // Kiểm tra lại sau 5 phút nếu snippet không đổi
+      })
 
-      if (unreadList.length > 0 && this.canSendRateLimit()) {
-        console.log(`📬 [AUTOPILOT] Tìm thấy ${unreadList.length} hội thoại chưa đọc. Đang chọn xử lý...`)
-        // Bấm vào hội thoại chưa đọc đầu tiên
-        await this.metaAgent.selectConversationByIndex(page, unreadList[0].index)
-        await page.waitForTimeout(2000)
+      if (pendingList.length > 0 && this.canSendRateLimit()) {
+        const target = pendingList.find((c) => c.isUnread) || pendingList[0]
+        const key = `${target.customerName || target.index}::${target.previewLine || target.snippet}`
+        this.checkedSnippets.set(key, nowMs)
+        if (this.checkedSnippets.size > 300) {
+          const firstKey = this.checkedSnippets.keys().next().value
+          this.checkedSnippets.delete(firstKey)
+        }
+
+        console.log(
+          `📬 [AUTOPILOT] Phát hiện ${pendingList.length} hội thoại chờ xử lý (Ưu tiên: "${target.customerName || target.snippet}"). Đang mở...`
+        )
+        await this.metaAgent.selectConversationByIndex(page, target.index, target.selector || null)
+        await page.waitForTimeout(1500)
 
         const processedUnread = await this.metaAgent.processCurrentConversation(page, {
           dryRun: !this.autoReply || options.dryRun,
@@ -282,7 +312,8 @@ export class AutoPilotService {
       return {
         success: true,
         processedCurrent,
-        unreadCount: unreadList.length,
+        unreadCount: pendingList.length,
+        totalConversationsScanned: conversationList.length,
         timestamp: new Date().toISOString(),
       }
     } catch (err) {
@@ -292,17 +323,24 @@ export class AutoPilotService {
       console.error(`⚠️ [AUTOPILOT LỖI CHU KỲ #${this.stats.totalCycles}]:`, err.message)
 
       // TỰ PHỤC HỒI LIÊN TỤC: Khi gặp lỗi ngữ cảnh/trình duyệt crash, tự động khởi động lại trình duyệt
-      // Tuyệt đối không dừng tiến trình (không chuyển sang PAUSED)
       if (this.stats.consecutiveErrors >= 3) {
         console.warn('🔄 [AUTOPILOT SELF-HEALING] Tự động hồi phục và khởi tạo lại trình duyệt ngầm...')
         try {
           await this.browserManager.close().catch(() => {})
           await new Promise((r) => setTimeout(r, 4000))
-          await this.browserManager.init().catch(() => {})
+          await this.browserManager.init()
           this.stats.consecutiveErrors = 0
           console.log('✅ [AUTOPILOT SELF-HEALING] Đã tái khởi động trình duyệt thành công!')
         } catch (recoverErr) {
           console.error('❌ [AUTOPILOT SELF-HEALING] Lỗi tái khởi động:', recoverErr.message)
+          if (this.stats.consecutiveErrors >= 5) {
+            await alertNotifier.sendCriticalAlert({
+              code: 'AUTOPILOT_SYSTEM_ERROR',
+              title: 'Lỗi hệ thống Auto-Pilot không thể tự phục hồi',
+              message: `Auto-Pilot gặp ${this.stats.consecutiveErrors} lỗi liên tiếp: ${recoverErr.message}`,
+              details: { consecutiveErrors: this.stats.consecutiveErrors, lastError: recoverErr.message },
+            })
+          }
         }
       }
 

@@ -45,7 +45,11 @@ app.use(cors({
       config.CORS_ORIGIN.includes(origin) ||
       origin.startsWith('chrome-extension://') ||
       origin.includes('facebook.com') ||
-      origin.includes('instagram.com')
+      origin.includes('instagram.com') ||
+      origin.includes('botcake.io') ||
+      origin.includes('pancake.vn') ||
+      origin.includes('ahachat.com') ||
+      origin.includes('manychat.com')
     ) {
       callback(null, true)
     } else {
@@ -212,6 +216,7 @@ app.post('/api/payment/generate-qr', apiLimiter, (req, res) => {
 })
 
 import { MayOrchestrator } from './agent/mayOrchestrator.js'
+import { createCloudBridgeHandler } from './channels/cloudBridgeAdapter.js'
 
 // ── QUANNGUYENS AI CSKH INTERACTION API (Blueprint §4, Phase 2, Co-Pilot RPA) ──────
 app.post('/api/chat', copilotLimiter, async (req, res) => {
@@ -253,6 +258,16 @@ app.post('/api/chat', copilotLimiter, async (req, res) => {
     return res.status(500).json({ success: false, error: err.message })
   }
 })
+
+// ── CLOUD 0Đ BRIDGE (Botcake / AhaChat / Fchat / ManyChat -> Render 24/7) ──
+const universalBridgeHandler = createCloudBridgeHandler('universal')
+const ahachatBridgeHandler = createCloudBridgeHandler('ahachat')
+const manychatBridgeHandler = createCloudBridgeHandler('manychat')
+
+app.all('/api/webhook/cloud-bridge', copilotLimiter, universalBridgeHandler)
+app.all('/api/webhook/botcake', copilotLimiter, universalBridgeHandler)
+app.all('/api/webhook/ahachat', copilotLimiter, ahachatBridgeHandler)
+app.all('/api/webhook/manychat', copilotLimiter, manychatBridgeHandler)
 
 // ── META PLATFORM WEBHOOK (Messenger, Instagram, Threads) ────
 app.get('/api/webhook/meta', handleMetaWebhookGet)

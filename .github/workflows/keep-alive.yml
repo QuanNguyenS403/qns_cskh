@@ -28,13 +28,16 @@ jobs:
 
     steps:
       - name: 🏓 Ping /api/ping
+        env:
+          RENDER_URL: ${{ secrets.RENDER_SERVICE_URL }}
         run: |
-          echo "⏰ $(date '+%Y-%m-%d %H:%M:%S UTC') — Pinging Render service..."
+          TARGET_BASE="${RENDER_URL:-https://cskh-2m9m.onrender.com}"
+          echo "⏰ $(date '+%Y-%m-%d %H:%M:%S UTC') — Pinging Render service: $TARGET_BASE ..."
           RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
-            --max-time 30 \
+            --max-time 45 \
             --retry 2 \
             --retry-delay 5 \
-            "${{ secrets.RENDER_SERVICE_URL }}/api/ping")
+            "${TARGET_BASE}/api/ping")
           
           echo "📡 HTTP Status: $RESPONSE"
           
@@ -49,6 +52,9 @@ jobs:
           fi
 
       - name: 🩺 Health Check /livez
+        env:
+          RENDER_URL: ${{ secrets.RENDER_SERVICE_URL }}
         run: |
-          LIVEZ=$(curl -sf --max-time 15 "${{ secrets.RENDER_SERVICE_URL }}/livez" 2>/dev/null || echo '{"status":"timeout"}')
+          TARGET_BASE="${RENDER_URL:-https://cskh-2m9m.onrender.com}"
+          LIVEZ=$(curl -sf --max-time 15 "${TARGET_BASE}/livez" 2>/dev/null || echo '{"status":"timeout"}')
           echo "🔍 /livez response: $LIVEZ"

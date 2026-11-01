@@ -40,10 +40,15 @@ export class BrowserManager {
       '--disable-blink-features=AutomationControlled',
       '--no-sandbox',
       '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
       '--disable-infobars',
       '--window-size=1366,768',
       '--disable-notifications',
       '--disable-gpu',
+      '--disable-extensions',
+      '--mute-audio',
+      '--renderer-process-limit=2',
+      '--js-flags=--max-old-space-size=512',
       '--lang=vi-VN,vi,en-US,en',
     ]
 

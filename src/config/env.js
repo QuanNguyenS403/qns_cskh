@@ -179,5 +179,15 @@ export const config = {
   PLAYWRIGHT_POLL_INTERVAL_MS: parseInt(process.env.PLAYWRIGHT_POLL_INTERVAL_MS || '6000', 10),
   PLAYWRIGHT_AUTO_REPLY: process.env.PLAYWRIGHT_AUTO_REPLY !== 'false',
   PLAYWRIGHT_TYPING_DELAY_MS: parseInt(process.env.PLAYWRIGHT_TYPING_DELAY_MS || '35', 10),
+
+  // Canh bao khan cap khi gap Meta Checkpoint, mat phien dang nhap hoac loi he thong
+  ALERT_TELEGRAM_BOT_TOKEN: process.env.ALERT_TELEGRAM_BOT_TOKEN || '',
+  ALERT_TELEGRAM_CHAT_ID: process.env.ALERT_TELEGRAM_CHAT_ID || '',
+  ALERT_ADMIN_MESSENGER_PSID: process.env.ALERT_ADMIN_MESSENGER_PSID || '',
+  ALERT_WEBHOOK_URL: process.env.ALERT_WEBHOOK_URL || '',
+  ALERT_DESKTOP_POPUP: process.env.ALERT_DESKTOP_POPUP !== 'false',
+
+  // Cloud 0d Bridge (Botcake / AhaChat / ManyChat -> Render Cloud 24/7)
+  CLOUD_BRIDGE_TOKEN: process.env.CLOUD_BRIDGE_TOKEN || '',
 }
 

@@ -28,6 +28,7 @@ module.exports = {
     {
       name: 'quannguyens-playwright-worker',
       script: 'scripts/playwright_worker.js',
+      node_args: '--experimental-sqlite',
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,

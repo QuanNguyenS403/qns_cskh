@@ -1,4 +1,4 @@
-﻿# ==============================================================================
+# ==============================================================================
 # RENDER BLUEPRINT SPECIFICATION (render.yaml)
 # HỆ THỐNG AI AGENT CSKH 24/7 — QUANNGUYENS — QUANNGUYENS.COM
 # ==============================================================================
@@ -85,6 +85,8 @@ services:
       # ── Tự động hóa chăm sóc vòng đời ────────────────────────────────────
       - key: OUTBOUND_ENABLED
         value: "true"
+      - key: QUIET_HOURS_ENABLED
+        value: "false"
       - key: QUIET_HOURS_START
         value: "20:00"
       - key: QUIET_HOURS_END

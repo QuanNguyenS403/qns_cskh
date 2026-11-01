@@ -51,7 +51,12 @@ export class MetaBusinessSuiteAgent {
     if (!currentUrl.includes('/latest/inbox')) {
       console.log(`🌐 [PLAYWRIGHT] Đang điều hướng đến Hộp thư Meta: ${url}`)
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 })
-      await page.waitForTimeout(3000)
+      await page
+        .locator('div[role="textbox"][contenteditable="true"], div[contenteditable="true"]')
+        .first()
+        .waitFor({ state: 'visible', timeout: 15000 })
+        .catch(() => {})
+      await page.waitForTimeout(2500)
     }
   }
 
@@ -164,12 +169,45 @@ export class MetaBusinessSuiteAgent {
         if (customerName !== 'Khách hàng') break
       }
 
+      // Fallback cho giao diện Meta Business Suite 2026 (Tên khách hiển thị bằng div/span in đậm ở thanh tiêu đề khung chat)
+      if (customerName === 'Khách hàng') {
+        const headerCandidates = document.querySelectorAll('div, span, a')
+        for (const el of headerCandidates) {
+          if (el.children.length > 0) continue
+          const rect = el.getBoundingClientRect()
+          if (rect.left >= 520 && rect.left <= 920 && rect.top >= 115 && rect.top <= 195) {
+            const style = window.getComputedStyle(el)
+            const fw = parseInt(style.fontWeight, 10) || 400
+            const fs = parseFloat(style.fontSize) || 14
+            const text = el.innerText?.trim()
+            if (
+              fw >= 600 &&
+              fs >= 15 &&
+              text &&
+              text.length > 1 &&
+              text.length < 45 &&
+              !/hộp thư|inbox|tìm kiếm|messenger|instagram|whatsapp|tất cả|quản lý|mới|bình luận/i.test(text)
+            ) {
+              customerName = text
+              break
+            }
+          }
+        }
+      }
+
       // 2. Nhận diện nền tảng (Facebook Messenger vs Instagram Direct)
-      const pageText = document.body.innerText || ''
+      const rightPanelText = Array.from(document.querySelectorAll('div, span, a'))
+        .filter((el) => {
+          const r = el.getBoundingClientRect()
+          return (r.left > 940 && r.top > 115) || (r.left > 520 && r.top > 115 && r.top < 205)
+        })
+        .map((el) => `${el.getAttribute('aria-label') || ''} ${el.children.length === 0 ? el.innerText || '' : ''}`)
+        .join(' ')
       const isInstagram =
         window.location.href.includes('instagram') ||
-        Boolean(document.querySelector('svg[aria-label*="Instagram"]')) ||
-        Boolean(document.querySelector('div[aria-label*="Instagram"]'))
+        /instagram/i.test(rightPanelText) ||
+        Boolean(document.querySelector('div[role="main"] svg[aria-label*="Instagram"]')) ||
+        Boolean(document.querySelector('div[role="main"] img[alt*="Instagram"]'))
       const channel = isInstagram ? 'instagram' : 'messenger'
 
       // 3. Tìm ô nhập liệu để xác định vùng trung tâm chat
@@ -297,38 +335,95 @@ export class MetaBusinessSuiteAgent {
    */
   async scanConversationList(page) {
     return await page.evaluate(() => {
-      // Tìm các mục hội thoại ở thanh điều hướng bên trái
-      const rowSelectors = [
-        'div[role="navigation"] div[role="row"]',
-        'div[role="list"] div[role="listitem"]',
-        'div[role="navigation"] a[href*="/latest/inbox"]',
-        'div[data-testid="inbox-conversation-list-row"]',
-        'div[role="gridcell"]',
-      ]
+      // Xóa đánh dấu cũ trước khi quét mới
+      document.querySelectorAll('[data-qns-conv-idx]').forEach((el) => el.removeAttribute('data-qns-conv-idx'))
 
-      const items = []
-      for (const sel of rowSelectors) {
-        const rows = document.querySelectorAll(sel)
-        if (rows.length > 0) {
-          rows.forEach((row, idx) => {
-            const text = row.innerText?.trim() || ''
-            if (text.length > 2) {
-              const hasUnreadBadge =
-                Boolean(row.querySelector('div[aria-label*="chưa đọc"]')) ||
-                Boolean(row.querySelector('div[aria-label*="Unread"]')) ||
-                Boolean(row.querySelector('span[data-visualcompletion="ignore-dynamic-layout"]')) ||
-                text.includes('chưa đọc')
+      // 1. Ưu tiên nhận diện thẻ hội thoại cột bên trái của Meta Business Suite (bền vững khi Meta đổi tên class CSS)
+      let candidateRows = []
+      const presentationDivs = Array.from(document.querySelectorAll('div[role="presentation"], div[role="row"], div[role="listitem"]'))
+      const seenTopBuckets = new Set()
 
-              items.push({
-                index: idx,
-                snippet: text.slice(0, 100),
-                isUnread: hasUnreadBadge,
-              })
-            }
-          })
-          if (items.length > 0) break
+      for (const el of presentationDivs) {
+        const r = el.getBoundingClientRect()
+        if (r.left >= 30 && r.left <= 220 && r.width >= 250 && r.width <= 520 && r.height >= 55 && r.height <= 125 && r.top >= 165) {
+          const rawText = (el.innerText || '').trim()
+          if (!rawText || rawText.length < 3) continue
+          if (/^tìm kiếm\b/i.test(rawText)) continue
+          const bucket = Math.round(r.top / 25)
+          if (!seenTopBuckets.has(bucket)) {
+            seenTopBuckets.add(bucket)
+            candidateRows.push(el)
+          }
         }
       }
+
+      // 2. Fallback nếu giao diện khác layout chuẩn
+      if (candidateRows.length === 0) {
+        const fallbackSelectors = [
+          'div[data-testid="inbox-conversation-list-row"]',
+          'div[role="navigation"] div[role="row"]',
+          'div[role="list"] div[role="listitem"]',
+          'div[role="navigation"] a[href*="/latest/inbox"]',
+        ]
+        for (const sel of fallbackSelectors) {
+          const found = Array.from(document.querySelectorAll(sel))
+          if (found.length > 0) {
+            candidateRows = found
+            break
+          }
+        }
+      }
+
+      const items = []
+      candidateRows.forEach((row) => {
+        const rawText = row.innerText?.trim() || ''
+        if (rawText.length <= 2) return
+
+        const idx = items.length
+        row.setAttribute('data-qns-conv-idx', String(idx))
+
+        const lines = rawText
+          .split(/\n+/)
+          .map((l) => l.trim())
+          .filter(Boolean)
+        const customerName = lines[0] || `Khách #${idx + 1}`
+        const previewLine = lines[1] || ''
+
+        const hasUnreadBadge =
+          Boolean(row.querySelector('[aria-label*="chưa đọc" i]')) ||
+          Boolean(row.querySelector('[aria-label*="Unread" i]')) ||
+          Boolean(row.querySelector('span[data-visualcompletion="ignore-dynamic-layout"]')) ||
+          /\bchưa đọc\b|\bunread\b/i.test(rawText)
+
+        // Kiểm tra tin nhắn preview in đậm (chưa đọc trên Meta Business Suite)
+        let hasBoldPreview = false
+        const spans = row.querySelectorAll('span, div')
+        for (const s of spans) {
+          if (s.children.length > 0) continue
+          const sText = s.innerText?.trim() || ''
+          if (!sText || sText === customerName) continue
+          const fw = parseInt(window.getComputedStyle(s).fontWeight, 10) || 400
+          if (fw >= 600 && sText.length > 1 && !/^\d{1,2}\s*tháng|^\d{1,2}:\d{2}/i.test(sText)) {
+            hasBoldPreview = true
+            break
+          }
+        }
+
+        // Kiểm tra khách nhắn cuối (dòng preview không bắt đầu bằng "Bạn:" / "You:")
+        const isShopLast =
+          /^bạn\s*:|^you\s*:|^dạ quannguyens|^dạ qns|^quannguyens xin chào/i.test(previewLine)
+        const awaitingReply = Boolean(previewLine) && !isShopLast
+
+        items.push({
+          index: idx,
+          selector: `[data-qns-conv-idx="${idx}"]`,
+          customerName,
+          previewLine: previewLine.slice(0, 120),
+          snippet: lines.join(' | ').slice(0, 140),
+          isUnread: hasUnreadBadge || hasBoldPreview,
+          awaitingReply,
+        })
+      })
 
       return items
     })
@@ -337,14 +432,31 @@ export class MetaBusinessSuiteAgent {
   /**
    * Chọn một cuộc hội thoại theo chỉ mục ở thanh danh sách
    */
-  async selectConversationByIndex(page, index) {
-    const selector = `div[role="navigation"] div[role="row"], div[role="list"] div[role="listitem"], div[role="navigation"] a[href*="/latest/inbox"]`
-    const rows = page.locator(selector)
-    const count = await rows.count()
-    if (index < count) {
-      await rows.nth(index).click()
-      await page.waitForTimeout(1500)
+  async selectConversationByIndex(page, index, preferredSelector = null) {
+    const taggedLocator = page.locator(`[data-qns-conv-idx="${index}"]`).first()
+    if ((await taggedLocator.count()) > 0) {
+      await taggedLocator.scrollIntoViewIfNeeded().catch(() => {})
+      await taggedLocator.click()
+      await page.waitForTimeout(1800)
       return true
+    }
+
+    const selectorsToTry = preferredSelector
+      ? [preferredSelector]
+      : [
+          'div[data-testid="inbox-conversation-list-row"]',
+          'div[role="navigation"] div[role="row"], div[role="list"] div[role="listitem"], div[role="navigation"] a[href*="/latest/inbox"]',
+        ]
+
+    for (const selector of selectorsToTry) {
+      const rows = page.locator(selector)
+      const count = await rows.count()
+      if (count > 0 && index < count) {
+        await rows.nth(index).scrollIntoViewIfNeeded().catch(() => {})
+        await rows.nth(index).click()
+        await page.waitForTimeout(1800)
+        return true
+      }
     }
     return false
   }
