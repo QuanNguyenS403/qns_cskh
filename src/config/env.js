@@ -181,6 +181,10 @@ export const config = {
   PLAYWRIGHT_TYPING_DELAY_MS: parseInt(process.env.PLAYWRIGHT_TYPING_DELAY_MS || '35', 10),
 
   // Canh bao khan cap khi gap Meta Checkpoint, mat phien dang nhap hoac loi he thong
+  OFFICIAL_ALERT_EMAILS: (process.env.OFFICIAL_ALERT_EMAILS || 'quannguyentop1lux@gmail.com,quannguyens403@gmail.com')
+    .split(',')
+    .map((e) => e.trim())
+    .filter(Boolean),
   ALERT_TELEGRAM_BOT_TOKEN: process.env.ALERT_TELEGRAM_BOT_TOKEN || '',
   ALERT_TELEGRAM_CHAT_ID: process.env.ALERT_TELEGRAM_CHAT_ID || '',
   ALERT_ADMIN_MESSENGER_PSID: process.env.ALERT_ADMIN_MESSENGER_PSID || '',

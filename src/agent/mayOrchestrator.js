@@ -19,6 +19,18 @@ import { buildSystemPrompt } from './systemPrompt.js'
 import { llmClient } from './llmClient.js'
 import { ConversationStore } from './conversationStore.js'
 
+/**
+ * Loại bỏ toàn bộ biểu tượng cảm xúc (emoji/icon) theo yêu cầu bắt buộc của Shop
+ */
+export function stripEmojis(text) {
+  if (!text) return ''
+  return String(text)
+    .replace(/[\p{Extended_Pictographic}\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\s+([.,!?;:])/g, '$1')
+    .trim()
+}
+
 // Kiểm tra xem tiến trình có đang chạy trong môi trường Unit Test tự động không
 const isTestMode = Boolean(
   process.env.npm_lifecycle_event === 'test' ||
@@ -135,8 +147,8 @@ export class MayOrchestrator {
 
     // ── 2. CÁC CỔNG BẢO MẬT, AN TOÀN VÀ ĐIỀU PHỐI KHẨN CẤP (GATES) ─
 
-    // X13 & X14: Chống Prompt Injection & mạo danh Admin (Gate B15)
-    if (/admin|chủ shop|bỏ qua quy tắc|ignore previous|giảm 90%|hủy hết đơn|xóa toàn bộ/i.test(rawText)) {
+    // X13 & X14: Chống mạo danh Admin & leo thang đặc quyền (Gate B15)
+    if (/admin|chủ shop|bỏ qua quy tắc|giảm 90%|hủy hết đơn|xóa toàn bộ/i.test(rawText)) {
       customerMessage = 'Dạ QuanNguyenS không thể thực hiện yêu cầu thay đổi quyền hạn hoặc chính sách qua tin nhắn. Mọi ưu đãi và đơn hàng đều được xử lý tự động theo quy định đã duyệt của QuanNguyenS ạ. Nếu bạn cần hỗ trợ trường hợp ngoại lệ, mình xin phép tạo yêu cầu chuyển tới quản lý shop nhé.'
       intentCodes.push('security_policy_enforcement')
       nextStep = 'INFORM'
@@ -145,6 +157,24 @@ export class MayOrchestrator {
         intentCodes,
         nextStep,
         evidenceRefs: ['privacy_policy_cskh@v1.0'],
+        emotionSignal: 'neutral',
+      })
+    }
+
+    // Rào chắn 3 & X31: Chống Jailbreak / Prompt Injection & Chủ đề ngoài sản phẩm của shop
+    if (
+      /quên hết chỉ dẫn|quên chỉ dẫn trước đó|bỏ qua chỉ dẫn|ignore previous|đóng vai|roleplay|act as|tiết lộ system prompt|system prompt|viết code|lập trình|python|javascript|chính trị|văn hóa|lịch sử|bài toán|phương trình|giải toán|bài tập|hóa học|vật lý/i.test(
+        combinedSearchText
+      )
+    ) {
+      customerMessage = 'Dạ em chỉ hỗ trợ giải đáp các thông tin về sản phẩm và dịch vụ của shop ạ.'
+      intentCodes.push('out_of_scope_redirect', 'guardrail_jailbreak_blocked')
+      nextStep = 'INFORM'
+      return this._finalizeOutput({
+        customerMessage,
+        intentCodes,
+        nextStep,
+        evidenceRefs: ['brand_identity@v1.0'],
         emotionSignal: 'neutral',
       })
     }
@@ -202,7 +232,7 @@ export class MayOrchestrator {
 
     // X27: Khách yêu cầu tắt thông báo / đừng nhắn tin nữa
     if (wantsToStop) {
-      customerMessage = 'Dạ QuanNguyenS đã ghi nhận yêu cầu và lập tức tắt thông báo chăm sóc cho bạn rồi ạ 🥰. Shop xin lỗi nếu tin nhắn trước làm phiền bạn nhé. Chúc bạn luôn có những phút giây thư thái và giấc ngủ thật ngon ạ!'
+      customerMessage = 'Dạ QuanNguyenS đã ghi nhận yêu cầu và lập tức tắt thông báo chăm sóc cho bạn rồi ạ. Shop xin lỗi nếu tin nhắn trước làm phiền bạn nhé. Chúc bạn luôn có những phút giây thư thái và giấc ngủ thật ngon ạ!'
       intentCodes.push('opt_out')
       nextStep = 'CLOSE'
       return this._finalizeOutput({
@@ -215,7 +245,7 @@ export class MayOrchestrator {
 
     // X15: Hỏi là người hay bot -> Minh bạch là trợ lý AI QNS của QuanNguyenS
     if (/bạn là người hay bot|người thật hay robot|quannguyens là ai|shop là ai|ai đang chat|phải bot không/i.test(combinedSearchText)) {
-      customerMessage = 'Dạ mình là QNS, trợ lý AI tư vấn và chăm sóc khách hàng của thương hiệu QuanNguyenS ạ 🥰. Tuy là AI nhưng mình được học rất kỹ về thời trang pijama, phom dáng và chất vải sợi tự nhiên để luôn có mặt 24/7 đồng hành, lắng nghe và hỗ trợ bạn chọn được bộ đồ ưng ý nhất. Bạn đang cần mình hỗ trợ điều gì cứ chia sẻ với mình nhé! 💕'
+      customerMessage = 'Dạ mình là QNS, trợ lý AI tư vấn và chăm sóc khách hàng của thương hiệu QuanNguyenS ạ. Tuy là AI nhưng mình được học rất kỹ về thời trang pijama, phom dáng và chất vải sợi tự nhiên để luôn có mặt 24/7 đồng hành, lắng nghe và hỗ trợ bạn chọn được bộ đồ ưng ý nhất. Bạn đang cần mình hỗ trợ điều gì cứ chia sẻ với mình nhé!'
       intentCodes.push('ask_identity')
       nextStep = 'INFORM'
       return this._finalizeOutput({
@@ -227,19 +257,20 @@ export class MayOrchestrator {
       })
     }
 
-    // Khách gửi Số điện thoại đặt hàng / chốt đơn (VD: 0912345678, +84988776655)
+    // Khách gửi Số điện thoại đặt hàng / chốt đơn (VD: 0912345678, +84988776655) - Tuân thủ Rào chắn 4 (Tính xác nhận)
     const phoneMatch = rawText.match(/(?:(?:\+84|0)(?:3|5|7|8|9)\d{8})\b/)
     if (phoneMatch) {
       const detectedPhone = phoneMatch[0]
       const targetName = conversationState.customerName ? ` bạn ${conversationState.customerName}` : ' bạn'
-      customerMessage = `Dạ QuanNguyenS xin cảm ơn${targetName} đã gửi thông tin đặt hàng ạ! 💕\n\nShop đã ghi nhận số điện thoại ${detectedPhone}. Để shop đóng gói gửi đồ chuẩn xác nhất cho mình, bạn cho shop xin thêm:\n1. Họ tên người nhận\n2. Địa chỉ nhận hàng chi tiết (Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành)\n3. Set đồ & Size bạn chọn (nếu chưa báo)\n\nĐặc biệt shop có ưu đãi giảm ngay 5% trực tiếp khi chuyển khoản VietQR và Freeship cho đơn từ 500k ạ. Shop sẽ chuẩn bị đơn ngay cho bạn nhé! ✨`
-      intentCodes.push('provide_phone', 'order_placement')
+      const summaryProduct = conversationState.activeProductId || 'Chưa chọn mẫu (vui lòng báo mẫu & size)'
+      customerMessage = `Dạ QuanNguyenS xin cảm ơn${targetName} đã gửi thông tin đặt hàng ạ!\n\nTrước khi chốt đơn, em xin phép tóm tắt lại thông tin đơn hàng để mình xác nhận nhé ạ:\n- Số điện thoại người nhận: ${detectedPhone}\n- Sản phẩm & Size: ${summaryProduct}\n- Họ tên & Địa chỉ nhận hàng: Bạn cho shop xin thêm Họ tên, Địa chỉ chi tiết (Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành) và xác nhận lại thông tin đơn hàng giúp shop nhé ạ!\n\nĐặc biệt shop có ưu đãi giảm ngay 5% trực tiếp khi chuyển khoản VietQR và Freeship cho đơn từ 500k ạ.`
+      intentCodes.push('provide_phone', 'order_placement', 'order_confirmation_summary')
       nextStep = 'ASK_SHIPPING_ADDRESS'
       return this._finalizeOutput({
         customerMessage,
         intentCodes,
         nextStep,
-        actionProposals: [{ tool: 'prepare_order', args: { phone: detectedPhone } }],
+        actionProposals: [{ tool: 'prepare_order', args: { phone: detectedPhone }, requires_customer_confirmation: true }],
         evidenceRefs: ['order_checkout_flow@v1.0'],
         emotionSignal: 'neutral',
       })
@@ -284,7 +315,7 @@ export class MayOrchestrator {
       const freeshipThreshold = shippingPolicy?.content?.freeshipThreshold || 500000
       const bankDiscount = pricingPolicy?.content?.bankTransferDiscountPct || 5
 
-      customerMessage = `Dạ giá niêm yết của QuanNguyenS là giá chuẩn đã cân đối tối ưu cho chất lượng vải sợi tự nhiên cao cấp đạt chuẩn quốc tế OEKO-TEX rồi ạ 🥰. Để hỗ trợ bạn tốt nhất, shop có chính sách miễn phí vận chuyển toàn quốc cho đơn hàng từ ${freeshipThreshold.toLocaleString('vi-VN')}đ (sau khi trừ chiết khấu) và giảm thêm ${bankDiscount}% khi thanh toán chuyển khoản VietQR ạ. Bạn có muốn mình tạo báo giá thanh toán chuyển khoản để nhận ưu đãi này không ạ?`
+      customerMessage = `Dạ giá niêm yết của QuanNguyenS là mức giá chuẩn đã cân đối tối ưu cho thiết kế phom dáng Châu Âu thoải mái và đạt chuẩn an toàn OEKO-TEX rồi ạ. Để hỗ trợ bạn tốt nhất, shop có chính sách miễn phí vận chuyển toàn quốc cho đơn hàng từ ${freeshipThreshold.toLocaleString('vi-VN')}đ (sau khi trừ chiết khấu) và giảm thêm ${bankDiscount}% khi thanh toán chuyển khoản VietQR ạ. Bạn có muốn mình tạo báo giá thanh toán chuyển khoản để nhận ưu đãi này không ạ?`
       intentCodes.push('negotiate_discount')
       nextStep = 'INFORM'
       evidenceRefs.push(`policy_${POLICY_TYPES.PRICING}@v1.0`)
@@ -326,21 +357,6 @@ export class MayOrchestrator {
       })
     }
 
-    // X31: Câu hỏi ngoài phạm vi (bài toán, phương trình, giải toán, bài tập)
-    if (/bài toán|phương trình|giải toán|bài tập|hóa học|vật lý|chính trị/i.test(combinedSearchText)) {
-      customerMessage = 'Dạ hihi bạn ơi, câu hỏi này nằm ngoài chuyên môn của mình mất rồi ạ! Là một trợ lý thời trang pijama của QuanNguyenS, mình giỏi nhất là lắng nghe và giúp bạn chọn được bộ đồ ngủ êm ái, thoáng mát nhất thôi nè 🥰. Nhưng học tập hay làm việc căng thẳng thế này, tối về bạn nhớ nghỉ ngơi sớm và cuộn mình trong set pijama mềm mại để nạp lại năng lượng nhé ạ! Bạn có muốn QuanNguyenS gợi ý mẫu đồ mặc nhà thư thái nhất không nè? 💕'
-      intentCodes.push('out_of_scope_redirect')
-      nextStep = 'INFORM'
-      evidenceRefs.push('brand_identity@v1.0')
-      return this._finalizeOutput({
-        customerMessage,
-        intentCodes,
-        nextStep,
-        evidenceRefs,
-        emotionSignal: 'neutral',
-      })
-    }
-
     // X03: "mẫu đó" khi chưa rõ mẫu
     if (/(mẫu đó|set đó|cái đó|mẫu này)/i.test(combinedSearchText) && !conversationState.activeProductId) {
       customerMessage = 'Dạ hiện shop đang có 3 set pyjama Thu Đông: The Daybreak Set (Sọc Hồng), The Stillwater Set (Caro Navy), và The Hearth Set (Sọc Nâu). Bạn đang quan tâm mẫu nào trong 3 mẫu này để QuanNguyenS báo giá và tư vấn size chuẩn xác nhất ạ?'
@@ -374,6 +390,26 @@ export class MayOrchestrator {
         customerMessage,
         intentCodes,
         nextStep,
+        evidenceRefs,
+        emotionSignal,
+      })
+    }
+
+    // Rào chắn 1 — NGUYÊN TẮC KHÔNG BỊA ĐẶT: Khi khách hỏi thông tin (giá sỉ, thông số kỹ thuật lạ, chính sách đại lý, sản phẩm ngoài danh mục) không xuất hiện trong tài liệu được cấp
+    if (
+      /định lượng|gsm|chiết khấu sỉ|nhập sỉ|đại lý|cộng tác viên|ctv|nhượng quyền|váy dạ hội|giày cao gót|túi xách|nước hoa/i.test(
+        combinedSearchText
+      )
+    ) {
+      customerMessage = 'Dạ thông tin này em xin phép ghi nhận để chuyên viên liên hệ hỗ trợ mình ngay nhé ạ!'
+      intentCodes.push('ungrounded_info_handoff')
+      nextStep = 'OPEN_CASE'
+      handoff = { required: true, reason_code: 'UNGROUNDED_INFO_HANDOFF', priority: 'P2' }
+      return this._finalizeOutput({
+        customerMessage,
+        intentCodes,
+        nextStep,
+        handoff,
         evidenceRefs,
         emotionSignal,
       })
@@ -538,7 +574,7 @@ export class MayOrchestrator {
       /mua quần áo|mua pijama|mua đồ ngủ|xem các mẫu/i.test(rawText)
     if (isBrowsingGeneral) {
       const greetingTarget = conversationState.customerName ? ` bạn ${conversationState.customerName}` : ' bạn'
-      customerMessage = `Dạ QuanNguyenS xin chào${greetingTarget} ạ! 💕\n\nShop hiện có sẵn các set pyjama thiết kế phong cách Châu Âu từ chất liệu sợi tự nhiên cao cấp (Cotton & Modal Blend) mềm mịn, thoáng khí 4 mùa:\n\n🌿 1. The Classic Set (Daybreak) – Sọc hồng pastel nhẹ nhàng, thanh lịch: 390.000đ (Ưu đãi từ 490k)\n🌿 2. The Café Look (Stillwater) – Họa tiết caro navy cổ điển, sang trọng (Best-Seller): 550.000đ (Freeship toàn quốc)\n🌿 3. The Evening Edit (Hearth) – Dệt đầm tay ấm áp, form suông cao cấp: 750.000đ (Freeship toàn quốc)\n\nKhông biết bạn đang muốn tìm mẫu mặc nhà thoải mái thường ngày hay mặc phòng điều hòa ạ? Bạn có thể chia sẻ cho shop xin chiều cao và cân nặng để em tư vấn size vừa vặn nhất cho mình nhé! ✨`
+      customerMessage = `Dạ QuanNguyenS xin chào${greetingTarget} ạ!\n\nShop hiện có sẵn các set pyjama thiết kế phom suông phong cách Châu Âu thanh lịch, mặc nhà thoải mái và chỉn chu:\n\n1. The Classic Set (Daybreak) – Sọc hồng pastel nhẹ nhàng, thanh lịch: 390.000đ (Ưu đãi từ 490k)\n2. The Café Look (Stillwater) – Họa tiết caro navy cổ điển, sang trọng (Best-Seller): 550.000đ (Freeship toàn quốc)\n3. The Evening Edit (Hearth) – Sọc nâu ấm áp, phom suông mặc nhà rất sang: 750.000đ (Freeship toàn quốc)\n\nKhông biết bạn đang muốn tìm mẫu mặc nhà thoải mái thường ngày hay mặc phòng điều hòa ạ? Bạn có thể chia sẻ cho shop xin chiều cao và cân nặng để em tư vấn size vừa vặn nhất cho mình nhé!`
       intentCodes.push('browse_catalog', 'ask_size_preference')
       nextStep = 'ASK_FIT_PREFERENCE'
       return this._finalizeOutput({
@@ -587,7 +623,7 @@ export class MayOrchestrator {
         .filter((l) => l.length > 5 && !l.startsWith('Minh bạch') && !l.startsWith('Quy tắc'))
         .slice(0, 3)
         .join(' ')
-      customerMessage = `Dạ QuanNguyenS xin chia sẻ thông tin với bạn nhé ạ 🥰: ${cleanSnippet} Bạn có cần QuanNguyenS tư vấn thêm điều gì nữa không, cứ nhắn mình nha! 💕`
+      customerMessage = `Dạ QuanNguyenS xin chia sẻ thông tin với bạn nhé ạ: ${cleanSnippet} Bạn có cần QuanNguyenS tư vấn thêm điều gì nữa không, cứ nhắn mình nha!`
       intentCodes.push('kb_query')
       nextStep = 'INFORM'
       return this._finalizeOutput({
@@ -599,8 +635,28 @@ export class MayOrchestrator {
       })
     }
 
-    // 6.6. Phản hồi mặc định thân thiện, quan tâm
-    customerMessage = 'Dạ QuanNguyenS chào bạn nha! 🥰 Shop luôn có mặt để hỗ trợ bạn ngắm các set pijama sợi tự nhiên, tư vấn size theo số đo, báo giá ưu đãi VietQR hoặc kiểm tra tiến độ đơn hàng ạ. Bạn đang cần QuanNguyenS hỗ trợ điều gì cứ nhắn mình nhé! 💕'
+    // 6.6. Rào chắn 1 — NGUYÊN TẮC KHÔNG BỊA ĐẶT: Khi khách hỏi thông tin (giá, thông số, khuyến mãi, chính sách, sản phẩm lạ) không có trong tài liệu
+    if (
+      /thông số|định lượng|gsm|chính sách|bảo hành|khuyến mãi|voucher|mã giảm giá|chiết khấu sỉ|nhập sỉ|đại lý|cộng tác viên|ctv|váy dạ hội|giày|túi xách|nước hoa/i.test(
+        combinedSearchText
+      )
+    ) {
+      customerMessage = 'Dạ thông tin này em xin phép ghi nhận để chuyên viên liên hệ hỗ trợ mình ngay nhé ạ!'
+      intentCodes.push('ungrounded_info_handoff')
+      nextStep = 'OPEN_CASE'
+      handoff = { required: true, reason_code: 'UNGROUNDED_INFO_HANDOFF', priority: 'P2' }
+      return this._finalizeOutput({
+        customerMessage,
+        intentCodes,
+        nextStep,
+        handoff,
+        evidenceRefs,
+        emotionSignal,
+      })
+    }
+
+    // 6.7. Phản hồi mặc định thân thiện, quan tâm
+    customerMessage = 'Dạ QuanNguyenS chào bạn nha! Shop luôn có mặt để hỗ trợ bạn ngắm các set pijama sợi tự nhiên, tư vấn size theo số đo, báo giá ưu đãi VietQR hoặc kiểm tra tiến độ đơn hàng ạ. Bạn đang cần QuanNguyenS hỗ trợ điều gì cứ nhắn mình nhé!'
     intentCodes.push('general_inquiry')
     nextStep = 'INFORM'
 
@@ -629,8 +685,9 @@ export class MayOrchestrator {
     needsIdentityVerification = false,
     emotionSignal = 'neutral',
   }) {
+    const sanitizedMessage = stripEmojis(customerMessage)
     const rawOutput = {
-      customer_message: customerMessage,
+      customer_message: sanitizedMessage,
       language,
       intent_codes: intentCodes,
       next_step: nextStep,

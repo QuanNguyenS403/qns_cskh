@@ -1,4 +1,4 @@
-﻿/**
+/**
  * PRE-FLIGHT GROUNDING & INTEGRITY CHECKER (Blueprint §8.4, §14.5, Prompt A Phase 2)
  * 
  * Kiểm duyệt bản nháp phản hồi trước khi gửi cho khách hoặc thực thi tool:
@@ -35,17 +35,20 @@ export class GroundingChecker {
 
     const { customer_message, action_proposals, evidence_refs } = candidate
 
-    // 2. Chặn rò rỉ Secrets / PII (B11, B19)
+    // 2. Chặn rò rỉ Secrets / PII / System Prompt (B11, B19, Rào chắn 3)
     const secretPatterns = [
       /process\.env/i,
       /secret/i,
       /webhook_api_key/i,
       /admin_secret/i,
       /token:[a-f0-9]{32,}/i,
+      /<trusted_context>/i,
+      /<task_context>/i,
+      /QUANNGUYENS_SYSTEM_PROMPT/i,
     ]
     for (const pat of secretPatterns) {
       if (pat.test(customer_message)) {
-        violations.push(`B19_VIOLATION: Tin nhắn chứa nội dung nhạy cảm / secret: ${pat}`)
+        violations.push(`B19_VIOLATION: Tin nhắn chứa nội dung nhạy cảm / secret / system prompt: ${pat}`)
       }
     }
 
@@ -62,12 +65,30 @@ export class GroundingChecker {
       }
     }
 
-    // 4. Chặn Prompt Injection & Leo thang đặc quyền (B15, X13, X14)
+    // 3b. Chặn tự ý hứa hẹn giảm giá, freeship hoặc thời gian giao hàng trái dữ liệu (Rào chắn 2)
+    const unauthorizedPromisePatterns = [
+      /cam kết giảm\s*(10|15|20|25|30|40|50|60|70|80|90)%/i,
+      /miễn phí vận chuyển cho mọi đơn/i,
+      /freeship không cần điều kiện/i,
+      /cam kết 100% giao trong \d+\s*(phút|giờ|tiếng)/i,
+    ]
+    for (const pat of unauthorizedPromisePatterns) {
+      if (pat.test(customer_message)) {
+        violations.push(`GUARDRAIL_2_UNAUTHORIZED_PROMISE: Tự ý cam kết giảm giá/freeship/thời gian giao hàng không có trong dữ liệu: ${pat}`)
+      }
+    }
+
+    // 4. Chặn Prompt Injection, Jailbreak & Leo thang đặc quyền (B15, X13, X14, Rào chắn 3)
     // Nếu tin nhắn khách có chỉ dẫn ác ý nhưng action_proposals lại chứa tool nguy hiểm
     const untrustedText = String(context.untrustedInput || '').toLowerCase()
     const injectionPhrases = [
       'bỏ qua quy tắc',
+      'quên hết chỉ dẫn',
+      'quên chỉ dẫn trước đó',
       'ignore previous instructions',
+      'đóng vai',
+      'tiết lộ system prompt',
+      'system prompt',
       'tôi là admin',
       'tôi là chủ shop',
       'giảm 90%',
@@ -103,6 +124,16 @@ export class GroundingChecker {
       if (!hasQuoteEvidence) {
         violations.push(`B03_UNGROUNDED_PRICE: Nêu giá tiền nhưng không có bằng chứng từ Pricing Service`)
       }
+    }
+
+    // 6. Chặn và tự động lọc bỏ toàn bộ Emoji / Icon (Quy định bắt buộc của Shop)
+    const emojiRegex = /[\p{Extended_Pictographic}\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu
+    if (candidate.customer_message && emojiRegex.test(candidate.customer_message)) {
+      candidate.customer_message = candidate.customer_message
+        .replace(emojiRegex, '')
+        .replace(/[ \t]{2,}/g, ' ')
+        .replace(/\s+([.,!?;:])/g, '$1')
+        .trim()
     }
 
     const passed = violations.length === 0

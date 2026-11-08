@@ -1,4 +1,4 @@
-﻿import { config } from '../config/env.js'
+import { config } from '../config/env.js'
 import { canSendGate } from './canSend.js'
 import { auditLogger } from '../security/auditLogger.js'
 
@@ -56,7 +56,7 @@ export class InstagramAdapter {
     }
 
     const body = {
-      recipient: { id: recipientId },
+      recipient: { id: String(recipientId).trim() },
       message: { text },
     }
 

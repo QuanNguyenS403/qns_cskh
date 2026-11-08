@@ -305,13 +305,35 @@ export const KNOWLEDGE_DOCS = [
     tags: ['kich ban', 'be gay tu choi', 'che dat', '180k', 'suy nghi them', 'chot don', 'khen dang', 'vietqr', 'giam 5%', 'freeship', 'thiep cam on', 'unboxing', 'self love'],
     content: `
       Bộ kịch bản thực chiến bẻ gãy rào cản tâm lý và chốt đơn tự nhiên:
-      1. Bẻ gãy chê đắt (so sánh hàng rẻ 150k-180k): Dùng đòn bẩy Cost-per-wear: Bộ đồ ngủ tiếp xúc với da suốt 8 tiếng mỗi đêm trong 2-3 năm, tính ra chưa tới 1.000đ/đêm để nâng niu giấc ngủ quý tộc và bảo vệ da lưng không bị mụn so với hàng phi nilon nóng bí.
-      2. Bẻ gãy "Để chị suy nghĩ thêm / hỏi chồng": Tôn trọng khách hàng thong thả cân nhắc + thông báo xưởng chỉ dệt giới hạn 25 bộ chuẩn chỉ từng đường kim mũi chỉ, kho chỉ còn đúng 2 set cuối cùng -> xin phép tạm giữ suất ưu đãi kèm quà tặng túi giặt cho chị trong 2 tiếng để không bị lỡ size yêu thích.
+      1. Bẻ gãy chê đắt (so sánh hàng rẻ 150k-180k): Dùng đòn bẩy Tính ứng dụng cao & Tự yêu bản thân: Phom dáng suông Châu Âu chỉn chu mặc nhà hay mở cửa đón khách đều tự tin lịch sự, giải phóng cơ thể khỏi trang phục gò bó; chia nhỏ chi phí mỗi ngày chưa tới 1.000đ/ngày cho sự thảnh thơi thư giãn suốt 2-3 năm.
+      2. Bẻ gãy "Để chị suy nghĩ thêm / hỏi chồng": Tôn trọng khách hàng thong thả cân nhắc + thông báo đợt hàng về phom dáng mới số lượng có hạn, kho chỉ còn đúng 2 set cuối cùng -> xin phép tạm giữ suất ưu đãi kèm quà tặng cho chị trong 2 tiếng để không bị lỡ size yêu thích.
       3. Bẻ gãy rủi ro đổi trả size số: Cam kết hỗ trợ 1-đổi-1 tận cửa nhà qua Viettel Post, shipper mang hàng mới đến đổi tận tay, khách không phải mang ra bưu cục và shop hỗ trợ tận tâm.
       4. Khen ngợi tinh tế (Flattery): Tôn vinh vóc dáng tỷ lệ vàng, khen gu thẩm mỹ tối giản Quiet Luxury nịnh da, khẳng định phụ nữ hiện đại biết yêu chiều bản thân (Self-love).
       5. Kỹ thuật chốt 2 chọn 1 (Alternative Close): Gợi ý chọn giữa 2 màu (ví dụ Kem Tây kiêu kỳ hay Xanh Forest thanh lịch) hoặc chọn thời điểm nhận hàng (sáng mai hay chiều mai) để đóng hộp kịp gửi ngay.
       6. Đòn bẩy thanh toán VietQR: Khách quét mã VietQR tự động giảm ngay 5% trực tiếp và được Freeship toàn quốc cho đơn từ 500k.
       7. Nghệ thuật Unboxing & Thiệp quà: Đóng gói hộp quà cứng nam châm sang trọng, nơ lụa, kèm thiệp cảm ơn viết tay tôn vinh nét đẹp và năng lượng an lành của người phụ nữ.
+    `.trim(),
+  },
+
+  // 9. Định hướng tư vấn giai đoạn Branding (Tuyệt đối không nhấn mạnh vải và đường may)
+  {
+    doc_id: 'branding_phase_communication_guideline',
+    version: 'v1.0',
+    category: 'guideline',
+    title: 'Định hướng tư vấn giai đoạn Branding: Không tâng bốc vải & đường may',
+    tags: ['dinh huong', 'branding', 'vai', 'duong may', 'khong tang boc', 'chot don', 'phom dang', 'ready to open door', 'tu van'],
+    content: `
+      Định hướng chiến lược tư vấn của Shop trong giai đoạn đầu xây dựng thương hiệu:
+      - Shop đang trong quá trình branding từ đầu, các khâu sản xuất và vải vóc đang trong quá trình hoàn thiện dần, chưa thể đạt mức hoàn mỹ tuyệt đối.
+      - TUYỆT ĐỐI KHÔNG đem chất liệu vải hay chất lượng đường may ra làm điểm nhấn chính để quảng bá hay thuyết phục khách mua.
+      - KHÔNG dùng từ ngữ tâng bốc quá mức làm tăng kỳ vọng khách hàng (như "chuẩn từng đường kim mũi chỉ", "may giấu chỉ cao cấp", "vải đỉnh cao không tì vết"...).
+      - Khi khách hỏi về vải: Trả lời ngắn gọn, trung thực, chừng mực (vải sợi tự nhiên thoáng mát nhẹ nhàng, đạt chuẩn an toàn OEKO-TEX, may phom suông rộng rãi thoải mái), sau đó lập tức bẻ lái sang phom dáng, màu sắc hoặc sự tiện dụng.
+      - 5 Trụ cột tạo niềm tin và chốt đơn thay thế:
+        1. Phom dáng suông Châu Âu tôn dáng, che khuyết điểm vòng 2 và bắp tay khéo léo.
+        2. Tính ứng dụng Ready-to-Open-Door: Mặc nhà lịch sự, tự tin mở cửa nhận đồ hay tiếp khách.
+        3. Gam màu nền nã, tôn da, hợp gu sống thanh lịch.
+        4. Cảm giác thư thái, nhẹ nhõm, tự thưởng cho bản thân sau ngày dài làm việc.
+        5. Xóa bỏ rủi ro bằng dịch vụ: Đồng kiểm khi nhận hàng, đổi size 7 ngày, bảo hành lỗi sản xuất đổi mới 100% qua Viettel Post, ưu đãi giảm 5% VietQR và Freeship từ 500k.
     `.trim(),
   },
 ]

@@ -1,24 +1,28 @@
 # ==============================================================================
 # GitHub Actions — Keep-Alive Cron Job cho Render Free Plan
 # Tự động ping /api/ping mỗi 10 phút để service không bị ngủ (spin-down)
-# HOÀN TOÀN MIỄN PHÍ — GitHub Actions cung cấp 2000 phút/tháng cho repo public
-# (repo private: 2000 phút/tháng, cron này chỉ dùng ~44 phút/tháng)
+# Hoàn toàn miễn phí — Tự động bắt lỗi timeout (curl exit 28) an toàn tuyệt đối
 # ==============================================================================
 name: 🤖 Keep-Alive Ping — Render Free Service
 
 on:
   schedule:
     # Ping mỗi 10 phút (*/10 * * * *)
-    # Lưu ý: GitHub Actions có thể delay 1-5 phút ở giờ cao điểm
+    # Lưu ý: GitHub Actions có thể delay 1-15 phút tùy tải máy chủ GitHub
     - cron: "*/10 * * * *"
 
-  # Cho phép chạy thủ công từ tab Actions trên GitHub
+  # Cho phép kích hoạt thủ công từ tab Actions trên GitHub
   workflow_dispatch:
     inputs:
       reason:
         description: "Lý do chạy thủ công"
         required: false
         default: "Manual keep-alive trigger"
+
+# Ngăn ngừa tình trạng các lần chạy cron bị dồn ứ khi GitHub Actions bị chậm
+concurrency:
+  group: keep-alive-ping
+  cancel-in-progress: true
 
 jobs:
   ping:
@@ -27,34 +31,70 @@ jobs:
     timeout-minutes: 3
 
     steps:
-      - name: 🏓 Ping /api/ping
+      - name: 🏓 Ping /api/ping & Đánh thức Service
         env:
           RENDER_URL: ${{ secrets.RENDER_SERVICE_URL }}
         run: |
           TARGET_BASE="${RENDER_URL:-https://cskh-2m9m.onrender.com}"
-          echo "⏰ $(date '+%Y-%m-%d %H:%M:%S UTC') — Pinging Render service: $TARGET_BASE ..."
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
-            --max-time 45 \
-            --retry 2 \
-            --retry-delay 5 \
-            "${TARGET_BASE}/api/ping")
+          # Bỏ dấu slash cuối nếu có
+          TARGET_BASE="${TARGET_BASE%/}"
           
-          echo "📡 HTTP Status: $RESPONSE"
+          echo "⏰ $(date '+%Y-%m-%d %H:%M:%S UTC') — Đang ping dịch vụ: $TARGET_BASE ..."
+          
+          # Tắt set -e để curl timeout (exit 28) hoặc lỗi mạng không làm crash Action
+          set +e
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            --connect-timeout 10 \
+            --max-time 45 \
+            "${TARGET_BASE}/api/ping" 2>/dev/null)
+          CURL_STATUS=$?
+          set -e
+          
+          # Chuẩn hóa mã phản hồi
+          if [ -z "$RESPONSE" ] || [ "$RESPONSE" = "000" ]; then
+            RESPONSE="000"
+          fi
+          
+          echo "📡 HTTP Status: $RESPONSE (curl exit code: $CURL_STATUS)"
+          
+          # Ghi thông tin vào GitHub Step Summary
+          echo "### 🤖 Keep-Alive Status Report" >> $GITHUB_STEP_SUMMARY
+          echo "- **Target URL:** \`$TARGET_BASE\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Thời gian (UTC):** \`$(date '+%Y-%m-%d %H:%M:%S UTC')\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **HTTP Code:** \`$RESPONSE\` (curl exit code: \`$CURL_STATUS\`)" >> $GITHUB_STEP_SUMMARY
           
           if [ "$RESPONSE" = "200" ]; then
-            echo "✅ Service đang hoạt động tốt (HTTP 200)"
-          elif [ "$RESPONSE" = "000" ]; then
-            echo "⚠️ Timeout hoặc không kết nối được — service có thể đang warm up"
-            exit 0
+            echo "✅ Service đang hoạt động tốt (HTTP 200 — Ready & Responsive)"
+            echo "- **Trạng thái:** ✅ **HOẠT ĐỘNG TỐT** (HTTP 200)" >> $GITHUB_STEP_SUMMARY
+          elif [ "$RESPONSE" = "000" ] || [ "$CURL_STATUS" -eq 28 ]; then
+            echo "⚠️ Đã phát tín hiệu đánh thức (Wake-up ping sent). Service Free Render có thể đang khởi động nguội (cold start, mất 50-90s) hoặc đang tạm nghỉ."
+            echo "- **Trạng thái:** ⏳ **ĐANG ĐÁNH THỨC / COLD START** (Tín hiệu ping đã gửi thành công)" >> $GITHUB_STEP_SUMMARY
           else
-            echo "⚠️ HTTP $RESPONSE — kiểm tra logs trên Render Dashboard"
-            exit 0
+            echo "⚠️ HTTP $RESPONSE — Dịch vụ phản hồi mã $RESPONSE (hãy kiểm tra log trên Render Dashboard nếu cần)"
+            echo "- **Trạng thái:** ⚠️ **HTTP $RESPONSE**" >> $GITHUB_STEP_SUMMARY
           fi
+          
+          # Luôn kết thúc thành công bước ping để không làm fail workflow
+          exit 0
 
       - name: 🩺 Health Check /livez
         env:
           RENDER_URL: ${{ secrets.RENDER_SERVICE_URL }}
         run: |
           TARGET_BASE="${RENDER_URL:-https://cskh-2m9m.onrender.com}"
-          LIVEZ=$(curl -sf --max-time 15 "${TARGET_BASE}/livez" 2>/dev/null || echo '{"status":"timeout"}')
-          echo "🔍 /livez response: $LIVEZ"
+          TARGET_BASE="${TARGET_BASE%/}"
+          
+          set +e
+          LIVEZ=$(curl -s --connect-timeout 5 --max-time 15 "${TARGET_BASE}/livez" 2>/dev/null)
+          LIVEZ_STATUS=$?
+          set -e
+          
+          if [ $LIVEZ_STATUS -eq 0 ] && [ -n "$LIVEZ" ]; then
+            echo "🔍 /livez response: $LIVEZ"
+            echo "- **Health Check (/livez):** \`$LIVEZ\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "🔍 /livez: Service chưa sẵn sàng phản hồi ngay (mã curl: $LIVEZ_STATUS). Quá trình khởi động sẽ hoàn tất trong ít phút."
+            echo "- **Health Check (/livez):** ⏳ Service đang trong quá trình spin-up" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          exit 0

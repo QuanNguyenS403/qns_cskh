@@ -558,6 +558,8 @@ app.post('/api/automation/cycle', async (req, res) => {
   }
 })
 
+import { backupDatabase } from '../scripts/backup_db.js'
+
 // Khởi tạo Database Migration và Dữ liệu Chính sách mặc định khi khởi chạy (H9: Fail-closed)
 try {
   const db = getDb()
@@ -566,6 +568,19 @@ try {
   seedDefaultPolicies(db, config.DEFAULT_SHOP_ID, true)
   if (config.GOOGLE_SHEET_AUTO_SYNC && config.NODE_ENV !== 'test' && !process.env.NODE_TEST_CONTEXT) {
     GoogleSheetsService.startPoller(db)
+  }
+  // Tự động sao lưu snapshot database định kỳ mỗi 24 giờ
+  if (config.NODE_ENV !== 'test' && !process.env.NODE_TEST_CONTEXT) {
+    const backupInterval = setInterval(() => {
+      try {
+        backupDatabase()
+      } catch (err) {
+        console.error('🚨 [AUTO BACKUP ERROR]:', err.message)
+      }
+    }, 24 * 60 * 60 * 1000)
+    if (backupInterval && typeof backupInterval.unref === 'function') {
+      backupInterval.unref()
+    }
   }
   console.log('✅ [CSKH DB] Cơ sở dữ liệu, Migration & Chính sách đã sẵn sàng.')
 } catch (e) {

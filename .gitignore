@@ -2,11 +2,14 @@ node_modules/
 *.log
 .system_generated/
 data/*.db*
+data/backups/
 !data/.gitkeep
 data/playwright_profile/
 data/playwright_storage_state.json
 data/autopilot_state.json
 data/*.json
+sheet_data.csv
+*.csv
 .env
 .env.local
 coverage/

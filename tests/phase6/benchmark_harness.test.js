@@ -1,4 +1,4 @@
-﻿import { describe, it, beforeEach } from 'node:test'
+import { describe, it, beforeEach } from 'node:test'
 import assert from 'node:assert'
 import { DatabaseSync } from 'node:sqlite'
 import { runMigrations } from '../../src/db/migrations.js'
@@ -233,7 +233,12 @@ describe('PHASE 6: Master Benchmark & Evaluation Suite (T01–T42 + X01–X32 Fu
       const res = await orchestrator.processMessage({
         text: 'Giải giúp mình bài toán phương trình bậc 2 này với!',
       })
-      assert.ok(res.customer_message.includes('May') || res.customer_message.includes('pijama') || res.customer_message.includes('QuanNguyenS'))
+      assert.ok(
+        res.customer_message.includes('Dạ em chỉ hỗ trợ giải đáp các thông tin về sản phẩm và dịch vụ của shop ạ.') ||
+          res.customer_message.includes('May') ||
+          res.customer_message.includes('pijama') ||
+          res.customer_message.includes('QuanNguyenS')
+      )
     })
   })
 })

@@ -106,7 +106,7 @@ export class LLMClient {
       try {
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`
         const controller = new AbortController()
-        const timeoutMs = 12000
+        const timeoutMs = parseInt(process.env.LLM_TIMEOUT_MS || '10000', 10)
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
         if (timeoutId && typeof timeoutId.unref === 'function') {
           timeoutId.unref()
@@ -186,6 +186,10 @@ export class LLMClient {
         }
       } catch (err) {
         lastError = err
+        if (err.name === 'AbortError' || (err.message && err.message.toLowerCase().includes('abort'))) {
+          this.cooldowns.set(modelName, Date.now() + 60000)
+          console.info(`🔄 [TIMEOUT BACKOFF] Model ${modelName} phản hồi chậm > 6s, tạm đưa vào cooldown 60s để chuyển model tiếp theo...`)
+        }
         console.warn(`⚠️ [GEMINI ${modelName} EXCEPTION]:`, err.message)
         continue
       }

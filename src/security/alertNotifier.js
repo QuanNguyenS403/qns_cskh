@@ -105,7 +105,7 @@ class AlertNotifier {
       }
     }
 
-    // 4. Cảnh báo qua Webhook ngoài (Google Apps Script gửi Email tới quannguyentop1lux@gmail.com / Discord / Slack)
+    // 4. Cảnh báo qua Webhook ngoài (Google Apps Script gửi Email tới quannguyentop1lux@gmail.com, quannguyens403@gmail.com / Discord / Slack)
     if (config.ALERT_WEBHOOK_URL) {
       try {
         const res = await fetch(config.ALERT_WEBHOOK_URL, {
@@ -117,6 +117,7 @@ class AlertNotifier {
             message,
             fullText,
             details,
+            recipients: config.OFFICIAL_ALERT_EMAILS,
             timestamp: timestampVN,
           }),
           signal: AbortSignal.timeout(8000),

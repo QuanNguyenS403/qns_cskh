@@ -17,7 +17,20 @@ export const NextStepEnum = z.enum([
   'HANDOFF',
   'INFORM',
   'CLOSE',
-])
+]).or(z.string().transform((val) => {
+  const v = String(val || '').toUpperCase().trim()
+  const valid = ['ASK_PRODUCT_ID', 'ASK_FIT_PREFERENCE', 'PROPOSE_ORDER', 'AWAIT_CONFIRMATION', 'VERIFY_IDENTITY', 'OPEN_CASE', 'HANDOFF', 'INFORM', 'CLOSE']
+  if (valid.includes(v)) return v
+  if (v.includes('DETAIL') || v.includes('FIT') || v.includes('SIZE')) return 'ASK_FIT_PREFERENCE'
+  if (v.includes('PRODUCT') || v.includes('SKU')) return 'ASK_PRODUCT_ID'
+  if (v.includes('ORDER')) return 'PROPOSE_ORDER'
+  if (v.includes('CONFIRM')) return 'AWAIT_CONFIRMATION'
+  if (v.includes('VERIFY') || v.includes('AUTH')) return 'VERIFY_IDENTITY'
+  if (v.includes('CASE') || v.includes('COMPLAINT')) return 'OPEN_CASE'
+  if (v.includes('HANDOFF') || v.includes('HUMAN')) return 'HANDOFF'
+  if (v.includes('CLOSE')) return 'CLOSE'
+  return 'INFORM'
+}))
 
 export const EmotionSignalEnum = z.enum([
   'neutral',

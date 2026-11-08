@@ -1,4 +1,4 @@
-﻿import { config } from '../config/env.js'
+import { config } from '../config/env.js'
 import { canSendGate } from './canSend.js'
 import { auditLogger } from '../security/auditLogger.js'
 
@@ -65,7 +65,7 @@ export class MessengerAdapter {
 
     // 2. Chuẩn bị payload chuẩn Meta Graph API v21.0
     const body = {
-      recipient: { id: recipientId },
+      recipient: { id: String(recipientId).trim() },
       message: { text },
       messaging_type: metaMessageTag ? 'MESSAGE_TAG' : 'RESPONSE',
     }
